@@ -748,7 +748,7 @@
     .session-name { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 0.92rem; color: var(--green); margin-bottom: 6px; }
     .session-desc { font-size: 0.82rem; font-weight: 300; color: var(--charcoal); line-height: 1.5; margin-bottom: 16px; }
     .session-price { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1.2rem; color: var(--green); }
-    .session-price span { font-size: 0.75rem; font-weight: 700; color: var(--sage); }
+    .session-price span { font-size: 1.2rem; font-weight: 700; color: var(--green); }
 
     .count-btn {
       width: 32px; height: 32px; border-radius: 50%;
@@ -1143,7 +1143,7 @@
               <div class="session-icon">⛳</div>
               <div class="session-name">Bay Session</div>
               <div class="session-desc">Trackman simulator · Up to 4 players</div>
-              <div class="session-price" id="price-bay-display">AED 150<span>–230/hr</span></div>
+              <div class="session-price" id="price-bay-display"><span id="price-bay-range">AED 150–230/hr</span></div>
             </div>
             <div class="session-card" id="card-lesson" onclick="selectSession(this)" data-type="lesson" data-price="350" data-label="PGA Pro Lesson">
               <div class="session-icon">🏌️</div>
@@ -1161,9 +1161,12 @@
               <label style="font-family:'Montserrat',sans-serif;font-size:0.72rem;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--green);display:block;margin-bottom:8px;">Duration</label>
               <div style="position:relative;">
                 <select id="duration-select" onchange="selectDurationDropdown(this.value)" style="width:100%;appearance:none;-webkit-appearance:none;border:1.5px solid rgba(45,90,61,0.2);background:var(--cream);padding:13px 40px 13px 16px;font-family:'Montserrat',sans-serif;font-size:0.82rem;font-weight:600;color:var(--charcoal);outline:none;cursor:pointer;letter-spacing:0.04em;">
-                  <option value="0.5">0.5 hrs — 30 minutes</option>
-                  <option value="1" selected>1.0 hr — 1 hour</option>
-                  <option value="1.5">1.5 hrs — 1 hour 30 minutes</option>
+                  <option value="0.5">0.5 hours</option>
+                  <option value="1" selected>1.0 hour</option>
+                  <option value="1.5">1.5 hours</option>
+                  <option value="2">2.0 hours</option>
+                  <option value="2.5">2.5 hours</option>
+                  <option value="3">3.0 hours</option>
                 </select>
                 <div style="position:absolute;right:14px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--green);font-size:0.7rem;">▼</div>
               </div>
@@ -1410,8 +1413,8 @@
 
     function applyPricingToCards(p) {
       // Update booking section cards
-      const bayDisplay = document.getElementById('price-bay-display');
-      if (bayDisplay) bayDisplay.innerHTML = `AED ${p.offpeak_rate||150}<span>–${p.peak_rate||230}/hr</span>`;
+      const bayDisplay = document.getElementById('price-bay-range');
+      if (bayDisplay) bayDisplay.textContent = `AED ${p.offpeak_rate||150}–${p.peak_rate||230}/hr`;
       const bayCard = document.getElementById('card-bay');
       if (bayCard) bayCard.dataset.price = p.offpeak_rate || 150;
 
@@ -1666,7 +1669,10 @@
           guest_name:     (fname + ' ' + lname).trim(),
           guest_email:    email,
           session_type:   booking.label || 'Bay Session',
-          booking_date:   booking.date ? booking.date.toISOString().split('T')[0] : null,
+          booking_date:   booking.date ? (() => {
+            const d = booking.date;
+            return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+          })() : null,
           booking_time:   booking.time,
           duration_hours: durationVal,
           players:        parseInt(booking.players) || 1,
