@@ -302,6 +302,35 @@
       .stats-grid { grid-template-columns: 1fr 1fr; }
     }
 
+    /* ── BAY COLOURS ─────────────────────── */
+    .bay-toggle {
+      font-family: 'Montserrat', sans-serif; font-size: 0.68rem; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase; padding: 7px 14px;
+      background: none; border: none; cursor: pointer; color: var(--sage);
+      transition: all 0.2s;
+    }
+    .bay-toggle.active { background: var(--green); color: var(--cream); }
+    .bay-toggle:hover:not(.active) { background: rgba(45,90,61,0.06); color: var(--green); }
+
+    /* Per-bay event colours */
+    .cal-event.bay-1, .cal-week-event.bay-1 { background: #2D5A3D; border-left-color: #A8C5A8; }
+    .cal-event.bay-2, .cal-week-event.bay-2 { background: #1a3d6b; border-left-color: #7aaddd; }
+    .cal-event.bay-3, .cal-week-event.bay-3 { background: #6b3a1a; border-left-color: #ddac7a; }
+    .cal-event.bay-4, .cal-week-event.bay-4 { background: #4a1a6b; border-left-color: #b47add; }
+
+    .bay-legend {
+      display: flex; gap: 16px; align-items: center;
+      padding: 10px 16px; background: white;
+      border: 1px solid rgba(45,90,61,0.08); border-bottom: none;
+      flex-wrap: wrap;
+    }
+    .bay-legend-item {
+      display: flex; align-items: center; gap: 6px;
+      font-family: 'Montserrat', sans-serif; font-size: 0.65rem;
+      font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--charcoal);
+    }
+    .bay-dot { width: 10px; height: 10px; border-radius: 50%; }
+
     /* ── PRICING ──────────────────────────── */
     .day-toggle {
       font-family: 'Montserrat', sans-serif; font-size: 0.65rem; font-weight: 600;
@@ -622,10 +651,18 @@
             <h2>Bookings</h2>
           </div>
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <!-- Bay selector -->
+            <div style="display:flex;border:1px solid rgba(45,90,61,0.2);overflow:hidden;">
+              <button class="bay-toggle active" id="bt-all" onclick="selectBay('all',this)">All Bays</button>
+              <button class="bay-toggle" id="bt-1" onclick="selectBay(1,this)">Bay 1</button>
+              <button class="bay-toggle" id="bt-2" onclick="selectBay(2,this)">Bay 2</button>
+              <button class="bay-toggle" id="bt-3" onclick="selectBay(3,this)">Bay 3</button>
+              <button class="bay-toggle" id="bt-4" onclick="selectBay(4,this)">Bay 4</button>
+            </div>
             <!-- View toggle -->
             <div style="display:flex;border:1px solid rgba(45,90,61,0.2);overflow:hidden;">
-              <button class="view-toggle active" id="vt-day" onclick="setCalView('day',this)">Day</button>
-              <button class="view-toggle" id="vt-week" onclick="setCalView('week',this)">Week</button>
+              <button class="view-toggle" id="vt-day" onclick="setCalView('day',this)">Day</button>
+              <button class="view-toggle active" id="vt-week" onclick="setCalView('week',this)">Week</button>
               <button class="view-toggle" id="vt-month" onclick="setCalView('month',this)">Month</button>
             </div>
             <!-- Nav -->
@@ -636,13 +673,24 @@
           </div>
         </div>
 
+        <!-- BAY LEGEND -->
+        <div class="bay-legend" id="bay-legend">
+          <span style="font-family:'Montserrat',sans-serif;font-size:0.62rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--sage);">Legend:</span>
+          <div class="bay-legend-item"><div class="bay-dot" style="background:#2D5A3D;"></div>Bay 1</div>
+          <div class="bay-legend-item"><div class="bay-dot" style="background:#1a3d6b;"></div>Bay 2</div>
+          <div class="bay-legend-item"><div class="bay-dot" style="background:#6b3a1a;"></div>Bay 3</div>
+          <div class="bay-legend-item"><div class="bay-dot" style="background:#4a1a6b;"></div>Bay 4</div>
+          <div class="bay-legend-item"><div class="bay-dot" style="background:rgba(192,57,43,0.4);"></div>Cancelled</div>
+          <div class="bay-legend-item"><div class="bay-dot" style="background:rgba(168,197,168,0.5);"></div>Completed</div>
+        </div>
+
         <!-- DAY VIEW -->
-        <div id="cal-day-view" class="cal-view">
+        <div id="cal-day-view" class="cal-view" style="display:none;">
           <div class="cal-day-grid" id="cal-day-grid"></div>
         </div>
 
         <!-- WEEK VIEW -->
-        <div id="cal-week-view" class="cal-view" style="display:none;">
+        <div id="cal-week-view" class="cal-view">
           <div class="cal-week-header" id="cal-week-header"></div>
           <div class="cal-week-grid" id="cal-week-grid"></div>
         </div>
@@ -834,14 +882,6 @@
               <input class="form-input" type="number" id="p-membership-rate" min="0" placeholder="750" />
             </div>
             <div class="form-group">
-              <label class="form-label">Included Off-Peak Hours / month</label>
-              <input class="form-input" type="number" id="p-membership-hours" min="0" placeholder="8" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Peak Uses Included / month</label>
-              <input class="form-input" type="number" id="p-membership-peak" min="0" placeholder="3" />
-            </div>
-            <div class="form-group">
               <label class="form-label">Member Guest Rate (AED)</label>
               <input class="form-input" type="number" id="p-guest-rate" min="0" placeholder="50" />
             </div>
@@ -979,11 +1019,26 @@
   }
 
   async function loadAllData() {
-    // Load all bookings with user info
+    // Load member bookings
     const { data: bookings } = await sb
       .from('bookings')
       .select('*')
       .order('created_at', { ascending: false });
+
+    // Load guest bookings (homepage, no login)
+    const { data: guestBookings } = await sb
+      .from('guest_bookings')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    // Normalise guest bookings to same shape — mark with guest flag
+    const normalisedGuest = (guestBookings || []).map(b => ({
+      ...b,
+      user_id: null,
+      _is_guest: true,
+      _guest_name: b.guest_name,
+      _guest_email: b.guest_email
+    }));
 
     // Load all profiles
     const { data: profiles } = await sb
@@ -991,8 +1046,7 @@
       .select('*')
       .order('created_at', { ascending: false });
 
-    // Load auth users via profiles (we have all we need from profiles)
-    allBookings = bookings || [];
+    allBookings = [...(bookings || []), ...normalisedGuest].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
     allMembers  = profiles || [];
 
     // Build profile lookup by id
@@ -1029,7 +1083,7 @@
     } else {
       tbody.innerHTML = todayBookings.map(b => {
         const profile = allProfiles[b.user_id];
-        const name = profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : 'Unknown';
+        const name = b._is_guest ? (b._guest_name || 'Guest') : (profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : 'Unknown');
         return `<tr>
           <td><strong>${name}</strong></td>
           <td>${b.session_type || '—'}</td>
@@ -1058,9 +1112,39 @@
   }
 
   // ── CALENDAR ───────────────────────────────
-  let calView = 'day';
+  let calView = 'week';
+  let calBay = 'all';
   let calDate = new Date();
   calDate.setHours(0,0,0,0);
+
+  // Bay colours
+  const BAY_COLOURS = {
+    1: { bg: '#2D5A3D', border: '#A8C5A8' },
+    2: { bg: '#1a3d6b', border: '#7aaddd' },
+    3: { bg: '#6b3a1a', border: '#ddac7a' },
+    4: { bg: '#4a1a6b', border: '#b47add' },
+  };
+
+  // Assign bay numbers to bookings deterministically by time slot
+  // In production you would store bay_number in the bookings table
+  function getBayNumber(booking) {
+    if (booking.bay_number) return booking.bay_number;
+    // Deterministic assignment based on booking id hash
+    const hash = booking.id ? booking.id.charCodeAt(0) + booking.id.charCodeAt(1) : 0;
+    return (hash % 4) + 1;
+  }
+
+  function selectBay(bay, btn) {
+    calBay = bay;
+    document.querySelectorAll('.bay-toggle').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderCalendar();
+  }
+
+  function getFilteredBookings() {
+    if (calBay === 'all') return allBookings;
+    return allBookings.filter(b => getBayNumber(b) === calBay);
+  }
 
   const HOURS = ['08:00 AM','09:00 AM','10:00 AM','11:00 AM','12:00 PM',
     '01:00 PM','02:00 PM','03:00 PM','04:00 PM','05:00 PM',
@@ -1140,55 +1224,97 @@
   // ── DAY VIEW ──────────────────────────────
   function renderDayView() {
     const ds = dateStr(calDate);
-    const bookings = allBookings.filter(b => b.booking_date === ds);
-    const grid = document.getElementById('cal-day-grid');
+    const bookings = getFilteredBookings().filter(b => b.booking_date === ds);
     const today = dateStr(new Date());
     const nowHour = new Date().getHours();
 
-    let timeCol = '';
-    let eventsCol = '';
+    // If "All Bays" — show 4 columns side by side
+    const bays = calBay === 'all' ? [1,2,3,4] : [calBay];
+    const colCount = bays.length;
 
+    let timeCol = '';
     HOURS.forEach((label, i) => {
       const h = HOUR_NUMS[i];
       const isCurrent = ds === today && h === nowHour;
-      timeCol += `<div class="cal-time-slot">${label}</div>`;
-      eventsCol += `<div class="cal-hour-row${isCurrent ? ' current-hour' : ''}" data-hour="${h}"></div>`;
+      timeCol += `<div class="cal-time-slot${isCurrent ? ' current-hour' : ''}">${label}</div>`;
     });
 
-    grid.innerHTML = `<div class="cal-time-col">${timeCol}</div><div class="cal-events-col" id="day-events-col">${eventsCol}</div>`;
+    let bayHeaders = bays.map(bay => {
+      const c = BAY_COLOURS[bay];
+      return `<div style="text-align:center;padding:8px;font-family:'Montserrat',sans-serif;font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;border-left:1px solid rgba(45,90,61,0.08);border-bottom:2px solid ${c.bg};color:${c.bg};">Bay ${bay}</div>`;
+    }).join('');
 
-    // Place booking blocks
-    const col = document.getElementById('day-events-col');
-    bookings.forEach(b => {
-      const h = parseHour(b.booking_time);
-      const dur = b.duration_hours || 1;
-      const startIdx = HOUR_NUMS.indexOf(h);
-      if (startIdx < 0) return;
-      const top = startIdx * 64;
-      const height = dur * 64 - 4;
-      const profile = allProfiles[b.user_id];
-      const name = profile ? (profile.first_name + ' ' + (profile.last_name || '')).trim() : 'Member';
-      const membership = profile?.membership_type === 'monthly' ? 'Monthly Member' : 'Pay As You Go';
+    let bayCols = bays.map(bay => {
+      const bayBookings = bookings.filter(b => getBayNumber(b) === bay);
+      const c = BAY_COLOURS[bay];
+      let rows = HOURS.map((_, i) => {
+        const h = HOUR_NUMS[i];
+        const isCurrent = ds === today && h === nowHour;
+        return `<div class="cal-hour-row${isCurrent ? ' current-hour' : ''}" style="border-left:1px solid rgba(45,90,61,0.08);" data-hour="${h}"></div>`;
+      }).join('');
 
-      const el = document.createElement('div');
-      el.className = `cal-event${b.status === 'cancelled' ? ' cancelled' : b.status === 'completed' ? ' completed' : ''}`;
-      el.style.cssText = `top:${top}px;height:${height}px;`;
-      el.innerHTML = `
-        <div class="cal-event-name">${name}</div>
-        <div class="cal-event-detail">${b.session_type || 'Bay Session'} · ${dur}hr · ${b.players || 1} player${b.players > 1 ? 's' : ''}</div>
-        <div class="cal-event-detail">AED ${b.total_amount || 0} · ${membership}</div>
-        ${b.notes ? `<div class="cal-event-detail" style="margin-top:2px;font-style:italic;">"${b.notes}"</div>` : ''}
-      `;
-      el.onclick = () => openBookingModal(b.id);
-      col.appendChild(el);
-    });
+      let events = '';
+      bayBookings.forEach(b => {
+        const h = parseHour(b.booking_time);
+        const dur = b.duration_hours || 1;
+        const startIdx = HOUR_NUMS.indexOf(h);
+        if (startIdx < 0) return;
+        const top = startIdx * 64;
+        const height = dur * 64 - 4;
+        const profile = allProfiles[b.user_id];
+        const name = profile ? (profile.first_name + ' ' + (profile.last_name || '')).trim() : 'Member';
+        const membership = profile?.membership_type === 'monthly' ? '⭐ Monthly' : 'PAYG';
+        const bgColour = b.status === 'cancelled' ? 'rgba(192,57,43,0.15)' : b.status === 'completed' ? 'rgba(168,197,168,0.3)' : c.bg;
+        const txtColour = (b.status === 'cancelled' || b.status === 'completed') ? 'var(--green)' : 'var(--cream)';
+        events += `<div onclick="openBookingModal('${b.id}')" style="position:absolute;top:${top}px;height:${height}px;left:4px;right:4px;background:${bgColour};border-left:3px solid ${c.border};padding:5px 7px;cursor:pointer;overflow:hidden;z-index:2;transition:opacity 0.15s;" onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1">
+          <div style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.68rem;color:${txtColour};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</div>
+          <div style="font-size:0.62rem;color:${b.status==='cancelled'||b.status==='completed'?'var(--sage)':'rgba(247,243,235,0.8)'};margin-top:1px;">${b.session_type||'Bay Session'} · ${dur}hr</div>
+          <div style="font-size:0.62rem;color:${b.status==='cancelled'||b.status==='completed'?'var(--sage)':'rgba(247,243,235,0.7)'};margin-top:1px;">${b.players||1}👤 · AED${b.total_amount||0} · ${membership}</div>
+          ${b.notes ? `<div style="font-size:0.58rem;color:rgba(247,243,235,0.6);margin-top:1px;font-style:italic;">"${b.notes}"</div>` : ''}
+        </div>`;
+      });
 
-    if (!bookings.length) {
-      const empty = document.createElement('div');
-      empty.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--sage);font-size:0.85rem;font-weight:300;text-align:center;pointer-events:none;';
-      empty.textContent = 'No bookings for this day';
-      col.appendChild(empty);
-    }
+      return `<div style="position:relative;flex:1;">${rows}${events}</div>`;
+    }).join('');
+
+    const grid = document.getElementById('cal-day-grid');
+    grid.style.gridTemplateColumns = `56px repeat(${colCount}, 1fr)`;
+    grid.innerHTML = `
+      <div class="cal-time-col">
+        <div style="height:32px;border-bottom:2px solid rgba(45,90,61,0.1);"></div>
+        ${timeCol}
+      </div>
+      <div style="display:contents;">
+        ${bays.map((bay, i) => `
+          <div style="display:flex;flex-direction:column;">
+            <div style="text-align:center;padding:8px;font-family:'Montserrat',sans-serif;font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;border-left:1px solid rgba(45,90,61,0.08);border-bottom:2px solid ${BAY_COLOURS[bay].bg};color:${BAY_COLOURS[bay].bg};height:32px;display:flex;align-items:center;justify-content:center;">Bay ${bay}</div>
+            <div style="position:relative;flex:1;">${
+              (() => {
+                const bayBookings = bookings.filter(b => getBayNumber(b) === bay);
+                const c = BAY_COLOURS[bay];
+                let rows = HOUR_NUMS.map((h, idx) => {
+                  const isCurrent = ds === today && h === nowHour;
+                  return `<div class="cal-hour-row${isCurrent?' current-hour':''}" style="border-left:1px solid rgba(45,90,61,0.08);" data-hour="${h}"></div>`;
+                }).join('');
+                let events = '';
+                bayBookings.forEach(b => {
+                  const h = parseHour(b.booking_time);
+                  const dur = b.duration_hours || 1;
+                  const si = HOUR_NUMS.indexOf(h);
+                  if (si < 0) return;
+                  const top = si * 64; const height = dur * 64 - 4;
+                  const profile = allProfiles[b.user_id];
+                  const name = profile ? (profile.first_name + ' ' + (profile.last_name||'')).trim() : 'Member';
+                  const membership = profile?.membership_type === 'monthly' ? '⭐ Monthly' : 'PAYG';
+                  const bg = b.status==='cancelled'?'rgba(192,57,43,0.15)':b.status==='completed'?'rgba(168,197,168,0.3)':c.bg;
+                  const txt = (b.status==='cancelled'||b.status==='completed')?'var(--green)':'var(--cream)';
+                  events += `<div onclick="openBookingModal('${b.id}')" style="position:absolute;top:${top}px;height:${height}px;left:4px;right:4px;background:${bg};border-left:3px solid ${c.border};padding:5px 7px;cursor:pointer;overflow:hidden;z-index:2;" onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1"><div style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.68rem;color:${txt};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</div><div style="font-size:0.62rem;color:${(b.status==='cancelled'||b.status==='completed')?'var(--sage)':'rgba(247,243,235,0.8)'};margin-top:1px;">${b.session_type||'Bay'} · ${dur}hr</div><div style="font-size:0.62rem;color:${(b.status==='cancelled'||b.status==='completed')?'var(--sage)':'rgba(247,243,235,0.7)'};margin-top:1px;">${b.players||1}👤 · AED${b.total_amount||0} · ${membership}</div>${b.notes?`<div style="font-size:0.58rem;color:rgba(247,243,235,0.6);font-style:italic;">"${b.notes}"</div>`:''}</div>`;
+                });
+                return rows + events;
+              })()
+            }</div>
+          </div>`).join('')}
+      </div>`;
   }
 
   // ── WEEK VIEW ─────────────────────────────
@@ -1198,20 +1324,27 @@
     const days = Array.from({length:7}, (_,i) => {
       const d = new Date(weekStart); d.setDate(d.getDate() + i); return d;
     });
+    const filteredBookings = getFilteredBookings();
 
     // Header
+    const header = document.getElementById('cal-week-header');
+    header.style.gridTemplateColumns = '56px repeat(7, 1fr)';
     let headerHtml = '<div class="cal-week-time"></div>';
     days.forEach(d => {
       const ds = dateStr(d);
       const isToday = ds === today;
+      const dayCount = filteredBookings.filter(b => b.booking_date === ds && b.status !== 'cancelled').length;
       headerHtml += `<div class="cal-week-day-header${isToday ? ' today' : ''}">
         <span class="cal-week-day-num">${d.getDate()}</span><br>
         ${DAY_NAMES[d.getDay()]}
+        ${dayCount > 0 ? `<div style="font-size:0.58rem;color:var(--sage);margin-top:2px;">${dayCount} booking${dayCount>1?'s':''}</div>` : ''}
       </div>`;
     });
-    document.getElementById('cal-week-header').innerHTML = headerHtml;
+    header.innerHTML = headerHtml;
 
     // Grid
+    const grid = document.getElementById('cal-week-grid');
+    grid.style.gridTemplateColumns = '56px repeat(7, 1fr)';
     let gridHtml = '';
     HOURS.forEach((label, i) => {
       const h = HOUR_NUMS[i];
@@ -1219,20 +1352,25 @@
       days.forEach(d => {
         const ds = dateStr(d);
         const isToday = ds === today;
-        const dayBookings = allBookings.filter(b => b.booking_date === ds && parseHour(b.booking_time) === h && b.status !== 'cancelled');
+        const dayBookings = filteredBookings.filter(b => b.booking_date === ds && parseHour(b.booking_time) === h);
         let cellContent = '';
         dayBookings.forEach(b => {
           const profile = allProfiles[b.user_id];
           const name = profile ? profile.first_name + ' ' + (profile.last_name?.[0] || '') + '.' : 'Member';
-          cellContent += `<div class="cal-week-event" onclick="openBookingModal('${b.id}')">
-            <div class="cal-week-event-name">${name}</div>
-            <div class="cal-week-event-sub">${b.players || 1}👤 · ${b.duration_hours || 1}hr · AED${b.total_amount||0}</div>
+          const bayNum = getBayNumber(b);
+          const c = BAY_COLOURS[bayNum] || BAY_COLOURS[1];
+          const bg = b.status === 'cancelled' ? 'rgba(192,57,43,0.15)' : b.status === 'completed' ? 'rgba(168,197,168,0.3)' : c.bg;
+          const txt = (b.status === 'cancelled' || b.status === 'completed') ? 'var(--green)' : 'var(--cream)';
+          const sub = (b.status === 'cancelled' || b.status === 'completed') ? 'var(--sage)' : 'rgba(247,243,235,0.7)';
+          cellContent += `<div class="cal-week-event" onclick="openBookingModal('${b.id}')" style="background:${bg};border-left:2px solid ${c.border};">
+            <div class="cal-week-event-name" style="color:${txt};">${name}</div>
+            <div class="cal-week-event-sub" style="color:${sub};">Bay ${bayNum} · ${b.players||1}👤 · ${b.duration_hours||1}hr</div>
           </div>`;
         });
         gridHtml += `<div class="cal-week-cell${isToday ? ' today-col' : ''}">${cellContent}</div>`;
       });
     });
-    document.getElementById('cal-week-grid').innerHTML = gridHtml;
+    grid.innerHTML = gridHtml;
   }
 
   // ── MONTH VIEW ────────────────────────────
@@ -1260,14 +1398,16 @@
     for (let d = 1; d <= daysInMonth; d++) {
       const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
       const isToday = ds === today;
-      const dayBookings = allBookings.filter(b => b.booking_date === ds && b.status !== 'cancelled');
+      const dayBookings = getFilteredBookings().filter(b => b.booking_date === ds && b.status !== 'cancelled');
       const show = dayBookings.slice(0,3);
       const more = dayBookings.length - 3;
 
       let events = show.map(b => {
         const profile = allProfiles[b.user_id];
         const name = profile ? profile.first_name + ' ' + (profile.last_name?.[0]||'') + '.' : 'Member';
-        return `<span class="cal-month-event" onclick="openBookingModal('${b.id}')">${b.booking_time || ''} ${name}</span>`;
+        const bayNum = getBayNumber(b);
+        const c = BAY_COLOURS[bayNum] || BAY_COLOURS[1];
+        return `<span class="cal-month-event" onclick="openBookingModal('${b.id}')" style="background:${c.bg};border-left-color:${c.border};">B${bayNum} ${b.booking_time ? b.booking_time.replace(' AM','a').replace(' PM','p') : ''} ${name}</span>`;
       }).join('');
       if (more > 0) events += `<span class="cal-month-more">+${more} more</span>`;
 
@@ -1448,7 +1588,7 @@
     } else {
       txBody.innerHTML = recent.map(b => {
         const profile = allProfiles[b.user_id];
-        const name = profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : 'Unknown';
+        const name = b._is_guest ? (b._guest_name || 'Guest') : (profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : 'Unknown');
         return `<tr>
           <td><strong>${name}</strong></td>
           <td>${b.session_type || '—'}</td>

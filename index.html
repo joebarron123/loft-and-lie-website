@@ -7,6 +7,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png"/>
   <link rel="shortcut icon" href="favicon.ico"/>
   <title>Loft & Lie — The Neighbourhood Golf Studio</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Source+Sans+3:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1134,24 +1135,40 @@
         <!-- STEP 1: SESSION -->
         <div id="step-1" class="booking-step active">
           <p style="font-family:'Montserrat',sans-serif;font-size:0.78rem;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:var(--green);margin-bottom:20px;">What would you like to book?</p>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;">
-            <div class="session-card" onclick="selectSession(this)" data-type="bay" data-price="150" data-label="Bay Session">
+          <!-- Live pricing loaded from Supabase -->
+          <div id="pricing-loading" style="font-family:'Montserrat',sans-serif;font-size:0.75rem;color:var(--sage);margin-bottom:20px;">Loading pricing...</div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+            <div class="session-card" id="card-bay-peak" onclick="selectSession(this)" data-type="bay" data-price="230" data-label="Bay Session (Peak)">
               <div class="session-icon">⛳</div>
               <div class="session-name">Bay Session</div>
-              <div class="session-desc">Trackman simulator, up to 4 players</div>
-              <div class="session-price">AED 150<span>/hr</span></div>
+              <div style="display:inline-block;background:rgba(212,139,42,0.12);color:#a86c10;font-family:'Montserrat',sans-serif;font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:2px 8px;margin-bottom:8px;">Peak</div>
+              <div class="session-desc">Fri & Sat evenings · Up to 4 players</div>
+              <div class="session-price" id="price-bay-peak">AED 230<span>/hr</span></div>
             </div>
-            <div class="session-card" onclick="selectSession(this)" data-type="lesson" data-price="350" data-label="PGA Pro Lesson">
+            <div class="session-card" id="card-bay-offpeak" onclick="selectSession(this)" data-type="bay" data-price="150" data-label="Bay Session (Off-Peak)">
+              <div class="session-icon">⛳</div>
+              <div class="session-name">Bay Session</div>
+              <div style="display:inline-block;background:rgba(168,197,168,0.2);color:var(--green);font-family:'Montserrat',sans-serif;font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:2px 8px;margin-bottom:8px;">Off-Peak</div>
+              <div class="session-desc">Sun–Thu · Up to 4 players</div>
+              <div class="session-price" id="price-bay-offpeak">AED 150<span>/hr</span></div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:28px;max-width:50%;">
+            <div class="session-card" id="card-lesson" onclick="selectSession(this)" data-type="lesson" data-price="350" data-label="PGA Pro Lesson">
               <div class="session-icon">🏌️</div>
               <div class="session-name">PGA Pro Lesson</div>
               <div class="session-desc">1-on-1 with our certified PGA professional</div>
-              <div class="session-price">AED 350<span>/hr</span></div>
+              <div class="session-price" id="price-lesson">AED 350<span>/hr</span></div>
             </div>
-            <div class="session-card" onclick="selectSession(this)" data-type="corporate" data-price="800" data-label="Corporate Event">
-              <div class="session-icon">🤝</div>
-              <div class="session-name">Corporate Event</div>
-              <div class="session-desc">Exclusive use, multiple bays, catering available</div>
-              <div class="session-price">AED 800<span>/2hr</span></div>
+          </div>
+
+          <!-- Peak/off-peak info strip -->
+          <div id="peak-info-strip" style="display:none;align-items:center;gap:16px;margin-bottom:20px;padding:14px 20px;background:var(--cream);border:1px solid rgba(45,90,61,0.1);">
+            <div id="peak-strip-icon" style="font-size:1.1rem;"></div>
+            <div>
+              <div id="peak-strip-title" style="font-family:'Montserrat',sans-serif;font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--green);"></div>
+              <div id="peak-strip-desc" style="font-size:0.8rem;font-weight:300;color:var(--charcoal);margin-top:2px;"></div>
             </div>
           </div>
 
@@ -1330,10 +1347,101 @@
 
   <script>
 
-    // ─── BOOKING SYSTEM ───────────────────
+    // ─── SUPABASE ──────────────────────────
+    const { createClient } = supabase;
+    const sb = createClient(
+      'https://pzkryujvwufexlraofjf.supabase.co',
+      'sb_publishable_F1sPAwfLOhjtwoYaXpLcZg_ov1-RhOO'
+    );
+
+    // ─── STATE ─────────────────────────────
     let booking = { type: null, price: 0, label: '', players: 1, hours: 1, date: null, time: null };
     let calYear, calMonth;
+    let livePrice = null;
+    let existingBookings = []; // from Supabase
 
+    // ─── LOAD LIVE PRICING ─────────────────
+    async function loadLivePricing() {
+      try {
+        const { data, error } = await sb.from('pricing').select('config').eq('id', 'loft_and_lie').single();
+        if (error) { console.warn('Pricing load error:', error); }
+        if (data?.config) {
+          livePrice = data.config;
+          applyPricingToCards(livePrice);
+        }
+      } catch(e) {
+        console.warn('Pricing fetch failed:', e);
+      }
+      const pl = document.getElementById('pricing-loading');
+      if (pl) pl.style.display = 'none';
+    }
+
+    function isPeakTime(date, timeStr) {
+      if (!livePrice || !date || !timeStr) return false;
+      const day = date.getDay();
+      const hour = parseTimeToHour(timeStr);
+      const peakStart = parseInt((livePrice.peak_start || '17:00').split(':')[0]);
+      const peakEnd   = parseInt((livePrice.peak_end   || '23:00').split(':')[0]);
+      return livePrice.peak_days?.includes(day) && hour >= peakStart && hour < peakEnd;
+    }
+
+    function parseTimeToHour(timeStr) {
+      const [time, period] = timeStr.split(' ');
+      let [h] = time.split(':').map(Number);
+      if (period === 'PM' && h !== 12) h += 12;
+      if (period === 'AM' && h === 12) h = 0;
+      return h;
+    }
+
+    function applyPricingToCards(p) {
+      // Update peak card
+      const peakEl = document.getElementById('price-bay-peak');
+      if (peakEl) peakEl.innerHTML = `AED ${p.peak_rate || 230}<span>/hr</span>`;
+      const peakCard = document.getElementById('card-bay-peak');
+      if (peakCard) peakCard.dataset.price = p.peak_rate || 230;
+
+      // Update off-peak card
+      const offEl = document.getElementById('price-bay-offpeak');
+      if (offEl) offEl.innerHTML = `AED ${p.offpeak_rate || 150}<span>/hr</span>`;
+      const offCard = document.getElementById('card-bay-offpeak');
+      if (offCard) offCard.dataset.price = p.offpeak_rate || 150;
+
+      // Update peak card subtitle
+      const peakDayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      const peakDays = (p.peak_days || [5,6]).map(d => peakDayNames[d]).join(' & ');
+      const offDays = (p.offpeak_days || [0,1,2,3,4]).map(d => peakDayNames[d]).join(', ');
+      const peakDescs = document.querySelectorAll('#card-bay-peak .session-desc');
+      peakDescs.forEach(el => el.textContent = `${peakDays} · ${p.peak_start||'17:00'}–${p.peak_end||'23:00'} · Up to 4 players`);
+      const offDescs = document.querySelectorAll('#card-bay-offpeak .session-desc');
+      offDescs.forEach(el => el.textContent = `${offDays} · ${p.offpeak_start||'08:00'}–${p.offpeak_end||'17:00'} · Up to 4 players`);
+
+      // Update lesson price
+      const lessonEl = document.getElementById('price-lesson');
+      if (lessonEl) lessonEl.innerHTML = `AED ${p.lesson_rate || 350}<span>/hr</span>`;
+      const lessonCard = document.getElementById('card-lesson');
+      if (lessonCard) lessonCard.dataset.price = p.lesson_rate || 350;
+    }
+
+    // ─── LOAD REAL AVAILABILITY ────────────
+    async function loadBookingsForDate(date) {
+      const ds = date.toISOString().split('T')[0];
+      const { data } = await sb.from('bookings')
+        .select('booking_time, duration_hours')
+        .eq('booking_date', ds)
+        .neq('status', 'cancelled');
+      existingBookings = data || [];
+    }
+
+    function isSlotBooked(timeStr) {
+      const slotHour = parseTimeToHour(timeStr);
+      return existingBookings.some(b => {
+        const bStart = parseTimeToHour(b.booking_time);
+        const bEnd   = bStart + (b.duration_hours || 1);
+        return slotHour >= bStart && slotHour < bEnd;
+      });
+    }
+
+    // ─── SESSION SELECTION ─────────────────
     function selectSession(el) {
       document.querySelectorAll('.session-card').forEach(c => c.classList.remove('selected'));
       el.classList.add('selected');
@@ -1342,26 +1450,19 @@
       booking.label = el.dataset.label;
 
       const pcr = document.getElementById('player-count-row');
-      const dr = document.getElementById('duration-row');
+      const dr  = document.getElementById('duration-row');
 
       if (booking.type === 'bay') {
         pcr.style.display = 'flex';
-        dr.style.display = 'flex';
-      } else if (booking.type === 'lesson') {
-        pcr.style.display = 'none';
-        dr.style.display = 'flex';
-        booking.players = 1;
+        dr.style.display  = 'flex';
       } else {
         pcr.style.display = 'none';
-        dr.style.display = 'none';
-        booking.players = 1;
-        booking.hours = 2;
+        dr.style.display  = 'flex';
+        booking.players   = 1;
       }
 
       const btn = document.getElementById('step1-next');
-      btn.disabled = false;
-      btn.style.opacity = '1';
-      btn.style.cursor = 'pointer';
+      btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer';
     }
 
     function changeCount(delta) {
@@ -1377,27 +1478,19 @@
     }
 
     function goToStep(n) {
-      if (n === 3) {
-        const fname = document.getElementById('fname').value;
-        const femail = document.getElementById('femail').value;
-        // allow going back without validation
-      }
       if (n === 4) {
         const fname = document.getElementById('fname').value.trim();
         const femail = document.getElementById('femail').value.trim();
         if (!fname || !femail) { alert('Please fill in at least your name and email.'); return; }
         populateSummary();
       }
-
       document.querySelectorAll('.booking-step').forEach(s => s.classList.remove('active'));
       document.getElementById('step-' + n).classList.add('active');
-
       document.querySelectorAll('.step-dot').forEach((dot, i) => {
         dot.classList.remove('active', 'done');
         if (i + 1 < n) dot.classList.add('done');
         if (i + 1 === n) dot.classList.add('active');
       });
-
       document.getElementById('booking-widget').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
@@ -1423,7 +1516,7 @@
       const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
 
       for (let i = 0; i < firstDay; i++) {
-        const blank = document.createElement('div'); grid.appendChild(blank);
+        grid.appendChild(document.createElement('div'));
       }
 
       for (let d = 1; d <= daysInMonth; d++) {
@@ -1432,10 +1525,15 @@
         cell.textContent = d;
         const cellDate = new Date(calYear, calMonth, d);
         const isToday = cellDate.toDateString() === today.toDateString();
-        const isPast = cellDate < today && !isToday;
+        const isPast  = cellDate < today && !isToday;
         if (isToday) cell.classList.add('today');
-        if (isPast) { cell.classList.add('past'); }
+        if (isPast)  { cell.classList.add('past'); }
         else {
+          // Mark peak days
+          if (livePrice?.peak_days?.includes(cellDate.getDay())) {
+            cell.style.fontWeight = '700';
+            cell.title = 'Peak day';
+          }
           cell.onclick = () => selectDate(cellDate, cell);
           if (booking.date && cellDate.toDateString() === booking.date.toDateString()) {
             cell.classList.add('selected');
@@ -1448,39 +1546,68 @@
     function changeMonth(delta) {
       calMonth += delta;
       if (calMonth > 11) { calMonth = 0; calYear++; }
-      if (calMonth < 0) { calMonth = 11; calYear--; }
+      if (calMonth < 0)  { calMonth = 11; calYear--; }
       renderCalendar();
     }
 
-    function selectDate(date, cell) {
+    async function selectDate(date, cell) {
       document.querySelectorAll('.cal-day').forEach(c => c.classList.remove('selected'));
       cell.classList.add('selected');
       booking.date = date;
+
+      // Load real availability from Supabase
+      document.getElementById('time-placeholder').textContent = 'Loading availability...';
+      document.getElementById('time-placeholder').style.display = 'block';
+      document.getElementById('time-slots').innerHTML = '';
+      await loadBookingsForDate(date);
       renderTimeSlots();
     }
 
     function renderTimeSlots() {
-      const container = document.getElementById('time-slots');
+      const container  = document.getElementById('time-slots');
       const placeholder = document.getElementById('time-placeholder');
       placeholder.style.display = 'none';
       container.innerHTML = '';
 
-      // Simulate some booked slots
-      const bookedSlots = ['10:00 AM', '02:00 PM', '06:00 PM'];
-      const allSlots = ['08:00 AM','09:00 AM','10:00 AM','11:00 AM','12:00 PM','01:00 PM','02:00 PM','03:00 PM','04:00 PM','05:00 PM','06:00 PM','07:00 PM','08:00 PM','09:00 PM'];
+      const allSlots = ['08:00 AM','09:00 AM','10:00 AM','11:00 AM','12:00 PM',
+        '01:00 PM','02:00 PM','03:00 PM','04:00 PM','05:00 PM',
+        '06:00 PM','07:00 PM','08:00 PM','09:00 PM'];
 
       allSlots.forEach(slot => {
         const btn = document.createElement('div');
         btn.className = 'time-slot';
-        btn.textContent = slot;
-        if (bookedSlots.includes(slot)) {
+        const booked = isSlotBooked(slot);
+        const peak   = isPeakTime(booking.date, slot);
+
+        if (booked) {
           btn.classList.add('booked');
-          btn.title = 'Already booked';
+          btn.innerHTML = `<span>${slot}</span><span style="font-size:0.6rem;display:block;margin-top:1px;">Full</span>`;
         } else {
+          // Show peak/off-peak indicator on slot
+          const rateLabel = peak ? `<span style="font-size:0.58rem;display:block;color:#a86c10;font-weight:700;margin-top:1px;">PEAK</span>` : `<span style="font-size:0.58rem;display:block;color:var(--sage);margin-top:1px;">OFF-PEAK</span>`;
+          btn.innerHTML = `<span>${slot}</span>${rateLabel}`;
           btn.onclick = () => {
             document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
             btn.classList.add('selected');
             booking.time = slot;
+
+            // Auto-adjust price if bay session based on peak/off-peak
+            if (booking.type === 'bay' || booking.label?.includes('Bay')) {
+              const rate = peak ? (livePrice?.peak_rate || 230) : (livePrice?.offpeak_rate || 150);
+              booking.price = rate;
+              const peakLabel = peak ? 'Bay Session (Peak)' : 'Bay Session (Off-Peak)';
+              booking.label = peakLabel;
+
+              // Show info strip
+              const strip = document.getElementById('peak-info-strip');
+              strip.style.display = 'flex';
+              document.getElementById('peak-strip-icon').textContent = peak ? '🔥' : '🌿';
+              document.getElementById('peak-strip-title').textContent = peak ? `Peak Rate — AED ${rate}/hr` : `Off-Peak Rate — AED ${rate}/hr`;
+              document.getElementById('peak-strip-desc').textContent = peak
+                ? 'This time slot falls within peak hours. A higher rate applies.'
+                : 'Great news — this is an off-peak slot at our lower rate.';
+            }
+
             const btn2 = document.getElementById('step2-next');
             btn2.disabled = false; btn2.style.opacity = '1'; btn2.style.cursor = 'pointer';
           };
@@ -1492,23 +1619,46 @@
 
     function populateSummary() {
       const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-      const dateStr = booking.date ? days[booking.date.getDay()] + ', ' + booking.date.getDate() + ' ' + months[booking.date.getMonth()] + ' ' + booking.date.getFullYear() : '—';
-      const durStr = booking.type === 'corporate' ? '2 Hours' : booking.hours + (booking.hours === 1 ? ' Hour' : ' Hours');
-      const total = booking.type === 'corporate' ? booking.price : booking.price * booking.hours;
+      const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      const dateStr = booking.date
+        ? days[booking.date.getDay()] + ', ' + booking.date.getDate() + ' ' + months[booking.date.getMonth()] + ' ' + booking.date.getFullYear()
+        : '—';
+      const durStr = booking.hours + (booking.hours === 1 ? ' Hour' : ' Hours');
+      const total  = booking.price * booking.hours;
 
-      document.getElementById('sum-type').textContent = booking.label;
-      document.getElementById('sum-date').textContent = dateStr;
-      document.getElementById('sum-time').textContent = booking.time || '—';
+      document.getElementById('sum-type').textContent     = booking.label;
+      document.getElementById('sum-date').textContent     = dateStr;
+      document.getElementById('sum-time').textContent     = booking.time || '—';
       document.getElementById('sum-duration').textContent = durStr;
-      document.getElementById('sum-players').textContent = booking.type === 'bay' ? booking.players : '1';
-      document.getElementById('sum-name').textContent = (document.getElementById('fname').value + ' ' + document.getElementById('lname').value).trim();
-      document.getElementById('sum-email').textContent = document.getElementById('femail').value;
-      document.getElementById('sum-total').textContent = 'AED ' + total;
+      document.getElementById('sum-players').textContent  = booking.type === 'bay' ? booking.players : '1';
+      document.getElementById('sum-name').textContent     = (document.getElementById('fname').value + ' ' + document.getElementById('lname').value).trim();
+      document.getElementById('sum-email').textContent    = document.getElementById('femail').value;
+      document.getElementById('sum-total').textContent    = 'AED ' + total;
     }
 
-    function confirmBooking() {
-      document.getElementById('confirm-email').textContent = document.getElementById('femail').value;
+    async function confirmBooking() {
+      const email = document.getElementById('femail').value;
+      const fname = document.getElementById('fname').value.trim();
+      const lname = document.getElementById('lname').value.trim();
+      const notes = document.getElementById('fnotes').value;
+      const total = booking.price * booking.hours;
+
+      // Save to Supabase guest_bookings table (no auth required)
+      await sb.from('guest_bookings').insert({
+        guest_name:     (fname + ' ' + lname).trim(),
+        guest_email:    email,
+        session_type:   booking.label,
+        booking_date:   booking.date?.toISOString().split('T')[0],
+        booking_time:   booking.time,
+        duration_hours: booking.hours,
+        players:        booking.players,
+        notes,
+        total_amount:   total,
+        status:         'confirmed',
+        created_at:     new Date().toISOString()
+      });
+
+      document.getElementById('confirm-email').textContent = email;
       document.querySelectorAll('.booking-step').forEach(s => s.classList.remove('active'));
       document.getElementById('step-5').classList.add('active');
       document.querySelectorAll('.step-dot').forEach(d => d.classList.add('done'));
@@ -1518,12 +1668,14 @@
 
     function resetBooking() {
       booking = { type: null, price: 0, label: '', players: 1, hours: 1, date: null, time: null };
+      existingBookings = [];
       document.querySelectorAll('.session-card').forEach(c => c.classList.remove('selected'));
       document.getElementById('player-count').textContent = '1';
       document.getElementById('player-count-row').style.display = 'none';
       document.getElementById('duration-row').style.display = 'none';
-      document.getElementById('fname').value = '';
-      document.getElementById('lname').value = '';
+      document.getElementById('peak-info-strip').style.display = 'none';
+      document.getElementById('fname').value  = '';
+      document.getElementById('lname').value  = '';
       document.getElementById('femail').value = '';
       document.getElementById('fphone').value = '';
       document.getElementById('fnotes').value = '';
@@ -1535,8 +1687,11 @@
       renderCalendar();
     }
 
-    // Init calendar on page load
-    window.addEventListener('DOMContentLoaded', renderCalendar);
+    // ─── INIT ──────────────────────────────
+    window.addEventListener('DOMContentLoaded', async () => {
+      await loadLivePricing();
+      renderCalendar();
+    });
 
     // Scroll reveal
     const reveals = document.querySelectorAll('.reveal');
