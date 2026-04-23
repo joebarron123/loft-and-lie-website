@@ -571,6 +571,7 @@
       <div class="sidebar-section-label">Settings</div>
       <ul class="sidebar-nav">
         <li><button onclick="showSection('pricing', this)"><span class="nav-icon">💷</span> Pricing</button></li>
+        <li><button onclick="showSection('settings', this)"><span class="nav-icon">⚙️</span> Settings</button></li>
       </ul>
 
       <div style="flex:1;"></div>
@@ -710,6 +711,44 @@
         <!-- MONTH VIEW -->
         <div id="cal-month-view" class="cal-view" style="display:none;">
           <div class="cal-month-grid" id="cal-month-grid"></div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="section-settings" class="page-section">
+        <div class="section-header">
+          <div>
+            <span class="label">Access Control</span>
+            <h2>Settings</h2>
+          </div>
+        </div>
+
+        <div style="max-width:640px;">
+          <!-- Admin Users -->
+          <div style="background:white;border:1px solid rgba(45,90,61,0.08);padding:32px;margin-bottom:24px;">
+            <h3 style="font-size:1rem;margin-bottom:6px;">Admin Users</h3>
+            <p style="font-size:0.85rem;font-weight:300;color:#888;margin-bottom:24px;">These email addresses have full access to the admin portal.</p>
+
+            <div id="admin-list" style="margin-bottom:24px;"></div>
+
+            <div style="border-top:1px solid rgba(45,90,61,0.08);padding-top:24px;">
+              <p style="font-family:'Montserrat',sans-serif;font-size:0.7rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--green);margin-bottom:12px;">Add Admin</p>
+              <div style="display:flex;gap:10px;align-items:center;">
+                <input class="form-input" type="email" id="new-admin-email" placeholder="email@example.com" style="flex:1;" onkeydown="if(event.key==='Enter')addAdmin()" />
+                <button class="btn-primary" style="width:auto;padding:11px 28px;white-space:nowrap;" onclick="addAdmin()">Add Admin</button>
+              </div>
+              <div id="admin-add-error" style="color:var(--red);font-size:0.8rem;margin-top:8px;display:none;"></div>
+            </div>
+          </div>
+
+          <!-- Info box -->
+          <div style="background:rgba(168,197,168,0.08);border:1px solid rgba(45,90,61,0.1);padding:20px 24px;display:flex;gap:14px;align-items:flex-start;">
+            <div style="font-size:1.1rem;flex-shrink:0;">ℹ️</div>
+            <div>
+              <div style="font-family:'Montserrat',sans-serif;font-size:0.72rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--green);margin-bottom:4px;">How admin access works</div>
+              <p style="font-size:0.82rem;font-weight:300;color:var(--charcoal);line-height:1.6;">Admin emails are stored in the database and checked at login. Admins must already have a Supabase account — send them the admin portal link and have them sign in with their email. Remove an admin by clicking the × next to their email.</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -972,14 +1011,19 @@
 
   // ── ADMIN LOGIN ────────────────────────────
   // Simple admin check — you can add more admin emails here
-  const ADMIN_EMAILS = ['joematthewbarron@hotmail.com'];
+  let ADMIN_EMAILS = ['joematthewbarron@hotmail.com']; // refreshed from DB
+
+  async function isAdminEmail(email) {
+    const { data } = await sb.from('admins').select('email').eq('email', email.toLowerCase()).single();
+    return !!data;
+  }
 
   window.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('admin-email').addEventListener('keydown', e => { if (e.key === 'Enter') adminLogin(); });
     document.getElementById('admin-password').addEventListener('keydown', e => { if (e.key === 'Enter') adminLogin(); });
 
     const { data: { session } } = await sb.auth.getSession();
-    if (session && ADMIN_EMAILS.includes(session.user.email)) {
+    if (session && await isAdminEmail(session.user.email)) {
       showDashboard(session.user);
     }
   });
@@ -992,19 +1036,22 @@
     errEl.style.display = 'none';
 
     if (!email || !password) { showAdminError('Please fill in all fields.'); return; }
-    if (!ADMIN_EMAILS.includes(email)) { showAdminError('You do not have admin access.'); return; }
 
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span>Signing in...';
 
     const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) { showAdminError('Invalid email or password.'); btn.disabled = false; btn.innerHTML = 'Sign In'; return; }
 
-    if (error) {
-      showAdminError('Invalid email or password.');
+    // Check admins table
+    if (!await isAdminEmail(email)) {
+      await sb.auth.signOut();
+      showAdminError('You do not have admin access.');
       btn.disabled = false; btn.innerHTML = 'Sign In';
-    } else {
-      showDashboard(data.user);
+      return;
     }
+
+    showDashboard(data.user);
   }
 
   async function adminSignOut() {
@@ -1028,6 +1075,7 @@
     document.getElementById('last-updated').textContent = 'Last updated: ' + new Date().toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
     await loadAllData();
     await loadPricing();
+    await loadAdmins();
   }
 
   async function loadAllData() {
@@ -1958,6 +2006,76 @@
       document.getElementById('pricing-save-status').textContent = 'Last saved: ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     }
   }
+  // ── ADMIN MANAGEMENT ───────────────────────────────
+  let adminList = [];
+
+  async function loadAdmins() {
+    const { data } = await sb.from('admins').select('*').order('created_at', { ascending: true });
+    adminList = data || [];
+    renderAdminList();
+    // Also refresh ADMIN_EMAILS in memory
+    ADMIN_EMAILS.length = 0;
+    adminList.forEach(a => ADMIN_EMAILS.push(a.email));
+  }
+
+  function renderAdminList() {
+    const el = document.getElementById('admin-list');
+    if (!el) return;
+    if (!adminList.length) {
+      el.innerHTML = '<p style="font-size:0.85rem;color:var(--sage);font-weight:300;">No admins configured.</p>';
+      return;
+    }
+    el.innerHTML = adminList.map(a => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(45,90,61,0.06);">
+        <div>
+          <div style="font-family:'Montserrat',sans-serif;font-size:0.82rem;font-weight:600;color:var(--charcoal);">${a.email}</div>
+          <div style="font-size:0.72rem;color:var(--sage);margin-top:2px;">Added ${formatDate(a.created_at)}</div>
+        </div>
+        <button onclick="removeAdmin('${a.id}','${a.email}')" style="background:none;border:1px solid rgba(192,57,43,0.3);color:var(--red);font-family:'Montserrat',sans-serif;font-size:0.65rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;padding:5px 12px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(192,57,43,0.08)'" onmouseout="this.style.background='none'">Remove</button>
+      </div>`).join('');
+  }
+
+  async function addAdmin() {
+    const email = document.getElementById('new-admin-email').value.trim().toLowerCase();
+    const errEl = document.getElementById('admin-add-error');
+    errEl.style.display = 'none';
+
+    if (!email || !email.includes('@')) {
+      errEl.textContent = 'Please enter a valid email address.';
+      errEl.style.display = 'block';
+      return;
+    }
+    if (adminList.find(a => a.email === email)) {
+      errEl.textContent = 'This email is already an admin.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    const { error } = await sb.from('admins').insert({ email });
+    if (error) {
+      errEl.textContent = 'Error adding admin: ' + error.message;
+      errEl.style.display = 'block';
+    } else {
+      document.getElementById('new-admin-email').value = '';
+      showToast(`${email} added as admin.`);
+      await loadAdmins();
+    }
+  }
+
+  async function removeAdmin(id, email) {
+    const currentUser = (await sb.auth.getUser()).data.user;
+    if (currentUser?.email === email) {
+      alert("You can't remove yourself as admin.");
+      return;
+    }
+    if (!confirm(`Remove ${email} as admin?`)) return;
+    const { error } = await sb.from('admins').delete().eq('id', id);
+    if (!error) {
+      showToast(`${email} removed.`);
+      await loadAdmins();
+    }
+  }
+
 </script>
 </body>
 </html>
