@@ -1363,33 +1363,67 @@
       const dayBookings = filteredBookings.filter(b => b.booking_date === ds);
 
       // Hour rows (background grid)
-      let rows = HOURS.map((_, i) => {
-        const h = HOUR_NUMS[i];
+      let rows = HOURS.map(() => {
         return `<div style="height:56px;border-bottom:1px solid rgba(45,90,61,0.06);border-left:1px solid rgba(45,90,61,0.06);"></div>`;
       }).join('');
 
-      // Absolute event blocks
-      let events = '';
+      // ── Collision detection: group overlapping bookings into columns ──────
+      // Each booking gets a column slot so overlapping ones sit side-by-side
+      const placed = []; // array of { booking, col, totalCols (updated after) }
+
       dayBookings.forEach(b => {
+        const bStart = parseHour(b.booking_time);
+        const bEnd   = bStart + (b.duration_hours || 1);
+        // Find which existing placed bookings overlap this one
+        const overlapping = placed.filter(p => {
+          const pStart = parseHour(p.b.booking_time);
+          const pEnd   = pStart + (p.b.duration_hours || 1);
+          return bStart < pEnd && bEnd > pStart;
+        });
+        // Pick the lowest unused column index
+        const usedCols = overlapping.map(p => p.col);
+        let col = 0;
+        while (usedCols.includes(col)) col++;
+        placed.push({ b, col });
+      });
+
+      // Second pass: for each booking, find the max columns in its overlap group
+      placed.forEach((item, i) => {
+        const iStart = parseHour(item.b.booking_time);
+        const iEnd   = iStart + (item.b.duration_hours || 1);
+        const group = placed.filter(p => {
+          const pStart = parseHour(p.b.booking_time);
+          const pEnd   = pStart + (p.b.duration_hours || 1);
+          return iStart < pEnd && iEnd > pStart;
+        });
+        item.totalCols = Math.max(...group.map(p => p.col)) + 1;
+      });
+
+      // Render events with computed column widths
+      let events = '';
+      placed.forEach(({ b, col, totalCols }) => {
         const h = parseHour(b.booking_time);
         const dur = b.duration_hours || 1;
         const startIdx = HOUR_NUMS.indexOf(h);
         if (startIdx < 0) return;
-        const top = startIdx * 56;
+        const top    = startIdx * 56;
         const height = dur * 56 - 3;
+        const pct    = 100 / totalCols;
+        const left   = col * pct;
+        const width  = pct;
         const profile = allProfiles[b.user_id];
         const isGuest = !b.user_id;
         const name = isGuest ? (b.guest_name || 'Guest') : (profile ? profile.first_name + ' ' + (profile.last_name?.[0]||'') + '.' : 'Member');
         const bayNum = getBayNumber(b);
         const c = BAY_COLOURS[bayNum] || BAY_COLOURS[1];
-        const bg = b.status==='cancelled'?'rgba(192,57,43,0.15)':b.status==='completed'?'rgba(168,197,168,0.3)':c.bg;
+        const bg  = b.status==='cancelled'?'rgba(192,57,43,0.15)':b.status==='completed'?'rgba(168,197,168,0.3)':c.bg;
         const txt = (b.status==='cancelled'||b.status==='completed')?'var(--green)':'var(--cream)';
         const sub = (b.status==='cancelled'||b.status==='completed')?'var(--sage)':'rgba(247,243,235,0.75)';
-        const guestTag = isGuest ? `<span style="font-size:0.52rem;background:rgba(212,139,42,0.3);color:#d4a847;padding:1px 4px;border-radius:2px;margin-left:3px;">GUEST</span>` : '';
-        events += `<div onclick="openBookingModal('${b.id}')" style="position:absolute;top:${top}px;height:${height}px;left:3px;right:3px;background:${bg};border-left:3px solid ${c.border};padding:4px 6px;cursor:pointer;overflow:hidden;z-index:2;border-radius:1px;" onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1">
-          <div style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.65rem;color:${txt};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}${guestTag}</div>
-          <div style="font-size:0.58rem;color:${sub};margin-top:1px;">Bay ${bayNum} · ${dur}hr · ${b.players||1}👤</div>
-          <div style="font-size:0.58rem;color:${sub};">AED ${b.total_amount||0}</div>
+        const guestTag = isGuest ? `<span style="font-size:0.5rem;background:rgba(212,139,42,0.3);color:#d4a847;padding:1px 3px;margin-left:2px;">GUEST</span>` : '';
+        events += `<div onclick="openBookingModal('${b.id}')" style="position:absolute;top:${top}px;height:${height}px;left:calc(${left}% + 2px);width:calc(${width}% - 4px);background:${bg};border-left:3px solid ${c.border};padding:4px 5px;cursor:pointer;overflow:hidden;z-index:2;" onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1">
+          <div style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.62rem;color:${txt};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}${guestTag}</div>
+          <div style="font-size:0.56rem;color:${sub};margin-top:1px;">Bay ${bayNum} · ${dur}hr · ${b.players||1}👤</div>
+          <div style="font-size:0.56rem;color:${sub};">AED ${b.total_amount||0}</div>
         </div>`;
       });
 
