@@ -301,6 +301,165 @@
       .admin-main { padding: 24px 16px; }
       .stats-grid { grid-template-columns: 1fr 1fr; }
     }
+
+    /* ── PRICING ──────────────────────────── */
+    .day-toggle {
+      font-family: 'Montserrat', sans-serif; font-size: 0.65rem; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 6px 10px; border: 1.5px solid rgba(45,90,61,0.2);
+      background: none; color: var(--sage); cursor: pointer; transition: all 0.15s;
+    }
+    .day-toggle.active { background: var(--green); border-color: var(--green); color: var(--cream); }
+    .day-toggle:hover:not(.active) { border-color: var(--green); color: var(--green); }
+
+    /* ── CALENDAR ─────────────────────────── */
+    .view-toggle {
+      font-family: 'Montserrat', sans-serif; font-size: 0.68rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase; padding: 7px 16px;
+      background: none; border: none; cursor: pointer; color: var(--sage);
+      transition: all 0.2s;
+    }
+    .view-toggle.active { background: var(--green); color: var(--cream); }
+    .view-toggle:hover:not(.active) { background: rgba(45,90,61,0.06); color: var(--green); }
+
+    .cal-nav-btn {
+      font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 600;
+      background: white; border: 1px solid rgba(45,90,61,0.2); color: var(--green);
+      padding: 5px 12px; cursor: pointer; transition: all 0.2s;
+    }
+    .cal-nav-btn:hover { background: var(--green); color: var(--cream); }
+
+    /* Day view */
+    .cal-day-grid {
+      background: white; border: 1px solid rgba(45,90,61,0.1);
+      display: grid; grid-template-columns: 56px 1fr;
+      overflow: auto; max-height: calc(100vh - 220px);
+    }
+    .cal-time-col { border-right: 1px solid rgba(45,90,61,0.08); }
+    .cal-time-slot {
+      height: 64px; border-bottom: 1px solid rgba(45,90,61,0.06);
+      font-family: 'Montserrat', sans-serif; font-size: 0.6rem; font-weight: 600;
+      letter-spacing: 0.06em; color: var(--sage); padding: 4px 8px; text-align: right;
+    }
+    .cal-events-col { position: relative; }
+    .cal-hour-row {
+      height: 64px; border-bottom: 1px solid rgba(45,90,61,0.06);
+      position: relative;
+    }
+    .cal-hour-row.current-hour { background: rgba(168,197,168,0.06); }
+    .cal-event {
+      position: absolute; left: 6px; right: 6px;
+      background: var(--green); border-radius: 2px; padding: 6px 8px;
+      cursor: pointer; z-index: 2; overflow: hidden;
+      transition: opacity 0.15s, transform 0.15s;
+      border-left: 3px solid var(--sage);
+    }
+    .cal-event:hover { opacity: 0.9; transform: translateX(1px); }
+    .cal-event.cancelled { background: rgba(192,57,43,0.15); border-left-color: var(--red); }
+    .cal-event.completed { background: rgba(168,197,168,0.3); border-left-color: var(--sage); }
+    .cal-event-name {
+      font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 0.7rem;
+      color: var(--cream); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .cal-event.cancelled .cal-event-name, .cal-event.completed .cal-event-name { color: var(--green); }
+    .cal-event-detail { font-size: 0.65rem; color: rgba(247,243,235,0.75); margin-top: 1px; }
+    .cal-event.cancelled .cal-event-detail, .cal-event.completed .cal-event-detail { color: var(--sage); }
+
+    /* Week view */
+    .cal-week-header {
+      display: grid; grid-template-columns: 56px repeat(7, 1fr);
+      background: white; border: 1px solid rgba(45,90,61,0.1);
+      border-bottom: 2px solid rgba(45,90,61,0.1); position: sticky; top: 0; z-index: 5;
+    }
+    .cal-week-day-header {
+      padding: 12px 8px; text-align: center;
+      font-family: 'Montserrat', sans-serif; font-size: 0.65rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--sage);
+      border-left: 1px solid rgba(45,90,61,0.06);
+    }
+    .cal-week-day-header.today { color: var(--green); }
+    .cal-week-day-num {
+      font-size: 1.1rem; font-weight: 700; color: var(--green);
+      display: block; margin-bottom: 2px;
+    }
+    .cal-week-day-header.today .cal-week-day-num {
+      background: var(--green); color: var(--cream);
+      width: 32px; height: 32px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      margin-bottom: 2px;
+    }
+    .cal-week-grid {
+      display: grid; grid-template-columns: 56px repeat(7, 1fr);
+      background: white; border: 1px solid rgba(45,90,61,0.1);
+      border-top: none; overflow: auto; max-height: calc(100vh - 260px);
+    }
+    .cal-week-time { border-right: 1px solid rgba(45,90,61,0.08); }
+    .cal-week-cell {
+      border-left: 1px solid rgba(45,90,61,0.06);
+      border-bottom: 1px solid rgba(45,90,61,0.06);
+      height: 56px; position: relative;
+    }
+    .cal-week-cell.today-col { background: rgba(168,197,168,0.04); }
+    .cal-week-event {
+      position: absolute; inset: 2px 3px;
+      background: var(--green); border-left: 2px solid var(--sage);
+      padding: 3px 5px; cursor: pointer; overflow: hidden;
+    }
+    .cal-week-event:hover { opacity: 0.85; }
+    .cal-week-event-name {
+      font-family: 'Montserrat', sans-serif; font-weight: 700;
+      font-size: 0.62rem; color: var(--cream); white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .cal-week-event-sub { font-size: 0.58rem; color: rgba(247,243,235,0.7); }
+
+    /* Month view */
+    .cal-month-grid {
+      background: white; border: 1px solid rgba(45,90,61,0.1);
+      overflow: auto;
+    }
+    .cal-month-header-row {
+      display: grid; grid-template-columns: repeat(7,1fr);
+      border-bottom: 2px solid rgba(45,90,61,0.1);
+    }
+    .cal-month-day-name {
+      padding: 10px; text-align: center;
+      font-family: 'Montserrat', sans-serif; font-size: 0.62rem; font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase; color: var(--sage);
+      border-right: 1px solid rgba(45,90,61,0.06);
+    }
+    .cal-month-cells {
+      display: grid; grid-template-columns: repeat(7,1fr);
+    }
+    .cal-month-cell {
+      min-height: 100px; border-right: 1px solid rgba(45,90,61,0.06);
+      border-bottom: 1px solid rgba(45,90,61,0.06); padding: 6px;
+      vertical-align: top;
+    }
+    .cal-month-cell.other-month { background: rgba(247,243,235,0.4); }
+    .cal-month-cell.today-cell { background: rgba(168,197,168,0.08); }
+    .cal-month-num {
+      font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 0.78rem;
+      color: var(--charcoal); margin-bottom: 4px; display: inline-block;
+      width: 24px; height: 24px; text-align: center; line-height: 24px;
+    }
+    .cal-month-cell.today-cell .cal-month-num {
+      background: var(--green); color: var(--cream); border-radius: 50%;
+    }
+    .cal-month-event {
+      display: block; background: var(--green); color: var(--cream);
+      font-family: 'Montserrat', sans-serif; font-size: 0.6rem; font-weight: 600;
+      padding: 2px 6px; margin-bottom: 2px; cursor: pointer;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      border-left: 2px solid var(--sage);
+    }
+    .cal-month-event:hover { opacity: 0.85; }
+    .cal-month-event.cancelled { background: rgba(192,57,43,0.15); color: var(--red); }
+    .cal-month-more {
+      font-family: 'Montserrat', sans-serif; font-size: 0.6rem; font-weight: 600;
+      color: var(--sage); cursor: pointer; padding: 1px 4px;
+    }
+    .cal-month-more:hover { color: var(--green); }
   </style>
 </head>
 <body>
@@ -370,13 +529,17 @@
 
       <div class="sidebar-section-label">Settings</div>
       <ul class="sidebar-nav">
-        <li><button onclick="showSection('settings', this)"><span class="nav-icon">⚙️</span> Settings</button></li>
+        <li><button onclick="showSection('pricing', this)"><span class="nav-icon">💷</span> Pricing</button></li>
       </ul>
 
       <div style="flex:1;"></div>
       <div class="sidebar-footer">
         <div class="admin-badge">Admin</div>
         <div class="admin-email" id="admin-email-display"></div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <a href="index.html" target="_blank" style="flex:1;text-align:center;background:rgba(168,197,168,0.1);border:1px solid rgba(168,197,168,0.2);color:rgba(247,243,235,0.6);font-family:'Montserrat',sans-serif;font-size:0.62rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:8px 6px;text-decoration:none;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:5px;" onmouseover="this.style.color='var(--cream)';this.style.background='rgba(168,197,168,0.2)'" onmouseout="this.style.color='rgba(247,243,235,0.6)';this.style.background='rgba(168,197,168,0.1)'">🏠 Site</a>
+          <a href="members.html" target="_blank" style="flex:1;text-align:center;background:rgba(168,197,168,0.1);border:1px solid rgba(168,197,168,0.2);color:rgba(247,243,235,0.6);font-family:'Montserrat',sans-serif;font-size:0.62rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:8px 6px;text-decoration:none;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:5px;" onmouseover="this.style.color='var(--cream)';this.style.background='rgba(168,197,168,0.2)'" onmouseout="this.style.color='rgba(247,243,235,0.6)';this.style.background='rgba(168,197,168,0.1)'">👤 Members</a>
+        </div>
         <button onclick="adminSignOut()" style="background:none;border:1px solid rgba(168,197,168,0.25);color:rgba(247,243,235,0.5);font-family:'Montserrat',sans-serif;font-size:0.65rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;padding:7px 14px;cursor:pointer;width:100%;transition:all 0.2s;">Sign Out</button>
       </div>
     </aside>
@@ -451,32 +614,42 @@
         </div>
       </div>
 
-      <!-- BOOKINGS -->
+      <!-- BOOKINGS CALENDAR -->
       <div id="section-bookings" class="page-section">
         <div class="section-header">
           <div>
             <span class="label">All Reservations</span>
             <h2>Bookings</h2>
           </div>
-          <div style="display:flex;gap:10px;align-items:center;">
-            <select class="filter-select" id="booking-filter" onchange="filterBookings()">
-              <option value="all">All Bookings</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-            <input class="search-input" type="text" id="booking-search" placeholder="Search name or session..." oninput="filterBookings()" />
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <!-- View toggle -->
+            <div style="display:flex;border:1px solid rgba(45,90,61,0.2);overflow:hidden;">
+              <button class="view-toggle active" id="vt-day" onclick="setCalView('day',this)">Day</button>
+              <button class="view-toggle" id="vt-week" onclick="setCalView('week',this)">Week</button>
+              <button class="view-toggle" id="vt-month" onclick="setCalView('month',this)">Month</button>
+            </div>
+            <!-- Nav -->
+            <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
+            <span id="cal-nav-label" style="font-family:'Montserrat',sans-serif;font-weight:600;font-size:0.85rem;color:var(--green);min-width:180px;text-align:center;"></span>
+            <button class="cal-nav-btn" onclick="calNav(1)">›</button>
+            <button class="cal-nav-btn" onclick="goToToday()" style="font-size:0.68rem;padding:6px 14px;">Today</button>
           </div>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Member</th><th>Session</th><th>Date</th><th>Time</th><th>Duration</th><th>Players</th><th>Total</th><th>Status</th><th>Actions</th></tr>
-            </thead>
-            <tbody id="all-bookings-body">
-              <tr class="empty-row"><td colspan="9">Loading...</td></tr>
-            </tbody>
-          </table>
+
+        <!-- DAY VIEW -->
+        <div id="cal-day-view" class="cal-view">
+          <div class="cal-day-grid" id="cal-day-grid"></div>
+        </div>
+
+        <!-- WEEK VIEW -->
+        <div id="cal-week-view" class="cal-view" style="display:none;">
+          <div class="cal-week-header" id="cal-week-header"></div>
+          <div class="cal-week-grid" id="cal-week-grid"></div>
+        </div>
+
+        <!-- MONTH VIEW -->
+        <div id="cal-month-view" class="cal-view" style="display:none;">
+          <div class="cal-month-grid" id="cal-month-grid"></div>
         </div>
       </div>
 
@@ -565,48 +738,167 @@
         </div>
       </div>
 
-      <!-- SETTINGS -->
-      <div id="section-settings" class="page-section">
+      <!-- PRICING -->
+      <div id="section-pricing" class="page-section">
         <div class="section-header">
           <div>
-            <span class="label">Configuration</span>
-            <h2>Settings</h2>
+            <span class="label">Dynamic Pricing</span>
+            <h2>Pricing</h2>
           </div>
+          <div id="pricing-save-status" style="font-size:0.78rem;color:var(--sage);"></div>
         </div>
-        <div style="max-width:560px;">
-          <div style="background:white;border:1px solid rgba(45,90,61,0.08);padding:32px;margin-bottom:24px;">
-            <h3 style="font-size:1rem;margin-bottom:20px;">Pricing</h3>
+
+        <div id="pricing-error" style="background:rgba(192,57,43,0.08);border:1px solid rgba(192,57,43,0.3);color:var(--red);padding:12px 16px;font-size:0.88rem;margin-bottom:20px;display:none;"></div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:900px;">
+
+          <!-- PAYG PEAK -->
+          <div style="background:white;border:1px solid rgba(45,90,61,0.08);padding:32px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+              <div style="width:10px;height:10px;background:var(--green);border-radius:50%;"></div>
+              <h3 style="font-size:1rem;">Peak Hours</h3>
+            </div>
+            <p style="font-size:0.82rem;font-weight:300;color:#888;margin-bottom:24px;">Higher demand windows — weekends and evenings.</p>
             <div class="form-group">
-              <label class="form-label">Bay Session Rate (AED/hr)</label>
-              <input class="form-input" type="number" id="set-bay-rate" value="150" />
+              <label class="form-label">Peak Rate (AED / hr)</label>
+              <input class="form-input" type="number" id="p-peak-rate" min="0" placeholder="230" />
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div class="form-group">
+                <label class="form-label">Start Time</label>
+                <input class="form-input" type="time" id="p-peak-start" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">End Time</label>
+                <input class="form-input" type="time" id="p-peak-end" />
+              </div>
             </div>
             <div class="form-group">
-              <label class="form-label">PGA Lesson Rate (AED/hr)</label>
-              <input class="form-input" type="number" id="set-lesson-rate" value="350" />
+              <label class="form-label">Peak Days</label>
+              <div id="peak-days" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;">
+                <button class="day-toggle" data-day="0" onclick="toggleDay(this)">Sun</button>
+                <button class="day-toggle" data-day="1" onclick="toggleDay(this)">Mon</button>
+                <button class="day-toggle" data-day="2" onclick="toggleDay(this)">Tue</button>
+                <button class="day-toggle" data-day="3" onclick="toggleDay(this)">Wed</button>
+                <button class="day-toggle" data-day="4" onclick="toggleDay(this)">Thu</button>
+                <button class="day-toggle active" data-day="5" onclick="toggleDay(this)">Fri</button>
+                <button class="day-toggle active" data-day="6" onclick="toggleDay(this)">Sat</button>
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">Monthly Membership (AED/mo)</label>
-              <input class="form-input" type="number" id="set-membership-rate" value="999" />
-            </div>
-            <button class="btn-primary" style="width:auto;padding:12px 32px;margin-top:8px;" onclick="showToast('Settings saved.')">Save Pricing</button>
           </div>
 
+          <!-- PAYG OFF-PEAK -->
           <div style="background:white;border:1px solid rgba(45,90,61,0.08);padding:32px;">
-            <h3 style="font-size:1rem;margin-bottom:20px;">Studio Info</h3>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+              <div style="width:10px;height:10px;background:var(--sage);border-radius:50%;"></div>
+              <h3 style="font-size:1rem;">Off-Peak Hours</h3>
+            </div>
+            <p style="font-size:0.82rem;font-weight:300;color:#888;margin-bottom:24px;">Lower demand windows — weekday mornings and afternoons.</p>
             <div class="form-group">
-              <label class="form-label">Opening Time</label>
-              <input class="form-input" type="time" id="set-open" value="08:00" />
+              <label class="form-label">Off-Peak Rate (AED / hr)</label>
+              <input class="form-input" type="number" id="p-offpeak-rate" min="0" placeholder="150" />
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div class="form-group">
+                <label class="form-label">Start Time</label>
+                <input class="form-input" type="time" id="p-offpeak-start" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">End Time</label>
+                <input class="form-input" type="time" id="p-offpeak-end" />
+              </div>
             </div>
             <div class="form-group">
-              <label class="form-label">Closing Time</label>
-              <input class="form-input" type="time" id="set-close" value="23:00" />
+              <label class="form-label">Off-Peak Days</label>
+              <div id="offpeak-days" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;">
+                <button class="day-toggle active" data-day="0" onclick="toggleDay(this)">Sun</button>
+                <button class="day-toggle active" data-day="1" onclick="toggleDay(this)">Mon</button>
+                <button class="day-toggle active" data-day="2" onclick="toggleDay(this)">Tue</button>
+                <button class="day-toggle active" data-day="3" onclick="toggleDay(this)">Wed</button>
+                <button class="day-toggle active" data-day="4" onclick="toggleDay(this)">Thu</button>
+                <button class="day-toggle" data-day="5" onclick="toggleDay(this)">Fri</button>
+                <button class="day-toggle" data-day="6" onclick="toggleDay(this)">Sat</button>
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">Number of Bays</label>
-              <input class="form-input" type="number" id="set-bays" value="4" />
-            </div>
-            <button class="btn-primary" style="width:auto;padding:12px 32px;margin-top:8px;" onclick="showToast('Settings saved.')">Save Settings</button>
           </div>
+
+          <!-- MEMBERSHIP -->
+          <div style="background:white;border:1px solid rgba(45,90,61,0.08);padding:32px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+              <div style="width:10px;height:10px;background:var(--amber);border-radius:50%;"></div>
+              <h3 style="font-size:1rem;">Monthly Membership</h3>
+            </div>
+            <p style="font-size:0.82rem;font-weight:300;color:#888;margin-bottom:24px;">Recurring monthly subscription for committed members.</p>
+            <div class="form-group">
+              <label class="form-label">Monthly Fee (AED)</label>
+              <input class="form-input" type="number" id="p-membership-rate" min="0" placeholder="750" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Included Off-Peak Hours / month</label>
+              <input class="form-input" type="number" id="p-membership-hours" min="0" placeholder="8" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Peak Uses Included / month</label>
+              <input class="form-input" type="number" id="p-membership-peak" min="0" placeholder="3" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Member Guest Rate (AED)</label>
+              <input class="form-input" type="number" id="p-guest-rate" min="0" placeholder="50" />
+            </div>
+          </div>
+
+          <!-- PGA LESSONS -->
+          <div style="background:white;border:1px solid rgba(45,90,61,0.08);padding:32px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+              <div style="width:10px;height:10px;background:#5a8a6a;border-radius:50%;"></div>
+              <h3 style="font-size:1rem;">PGA Lessons</h3>
+            </div>
+            <p style="font-size:0.82rem;font-weight:300;color:#888;margin-bottom:24px;">1-on-1 coaching sessions with the PGA professional.</p>
+            <div class="form-group">
+              <label class="form-label">Lesson Rate (AED / hr)</label>
+              <input class="form-input" type="number" id="p-lesson-rate" min="0" placeholder="350" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Standard Session Length (hrs)</label>
+              <input class="form-input" type="number" id="p-lesson-duration" min="0.5" step="0.5" placeholder="1" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Corporate Event Rate (AED / 2hr block)</label>
+              <input class="form-input" type="number" id="p-corporate-rate" min="0" placeholder="800" />
+            </div>
+          </div>
+
+        </div>
+
+        <!-- LIVE PREVIEW -->
+        <div style="background:var(--sidebar);padding:28px 32px;margin-top:28px;max-width:900px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+            <h3 style="color:var(--cream);font-size:0.9rem;">Live Preview — What customers see</h3>
+            <span style="font-size:0.72rem;color:var(--sage);">Updates instantly as you type</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+            <div style="background:rgba(168,197,168,0.1);padding:20px;text-align:center;">
+              <div style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:1.4rem;color:var(--cream);" id="prev-peak">AED 230</div>
+              <div style="font-size:0.72rem;color:var(--sage);margin-top:4px;">Peak / hr</div>
+            </div>
+            <div style="background:rgba(168,197,168,0.1);padding:20px;text-align:center;">
+              <div style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:1.4rem;color:var(--cream);" id="prev-offpeak">AED 150</div>
+              <div style="font-size:0.72rem;color:var(--sage);margin-top:4px;">Off-Peak / hr</div>
+            </div>
+            <div style="background:rgba(168,197,168,0.1);padding:20px;text-align:center;">
+              <div style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:1.4rem;color:var(--cream);" id="prev-membership">AED 750</div>
+              <div style="font-size:0.72rem;color:var(--sage);margin-top:4px;">Membership / mo</div>
+            </div>
+            <div style="background:rgba(168,197,168,0.1);padding:20px;text-align:center;">
+              <div style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:1.4rem;color:var(--cream);" id="prev-lesson">AED 350</div>
+              <div style="font-size:0.72rem;color:var(--sage);margin-top:4px;">PGA Lesson / hr</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:24px;display:flex;gap:14px;align-items:center;">
+          <button class="btn-primary" style="width:auto;padding:14px 48px;" onclick="savePricing()">Save & Publish Pricing</button>
+          <span style="font-size:0.78rem;font-weight:300;color:#888;">Changes go live immediately across the website and booking system.</span>
         </div>
       </div>
 
@@ -683,6 +975,7 @@
     document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
     document.getElementById('last-updated').textContent = 'Last updated: ' + new Date().toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
     await loadAllData();
+    await loadPricing();
   }
 
   async function loadAllData() {
@@ -707,7 +1000,7 @@
     allMembers.forEach(p => { allProfiles[p.id] = p; });
 
     renderOverview();
-    renderBookings();
+    renderCalendar();
     renderMembers();
     renderRevenue();
   }
@@ -764,48 +1057,239 @@
     }
   }
 
-  // ── BOOKINGS ───────────────────────────────
-  function renderBookings(filtered) {
-    const data = filtered || allBookings;
-    const tbody = document.getElementById('all-bookings-body');
-    if (!data.length) {
-      tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No bookings found.</td></tr>';
-      return;
-    }
-    tbody.innerHTML = data.map(b => {
-      const profile = allProfiles[b.user_id];
-      const name = profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : 'Unknown';
-      return `<tr>
-        <td><strong>${name}</strong></td>
-        <td>${b.session_type || '—'}</td>
-        <td>${formatDate(b.booking_date)}</td>
-        <td>${b.booking_time || '—'}</td>
-        <td>${b.duration_hours || 1}hr</td>
-        <td>${b.players || 1}</td>
-        <td>AED ${b.total_amount || 0}</td>
-        <td>${statusBadge(b.status)}</td>
-        <td style="display:flex;gap:6px;">
-          <button class="btn-sm btn-green" onclick="openBookingModal('${b.id}')">View</button>
-          ${b.status === 'confirmed' ? `<button class="btn-sm btn-red" onclick="cancelBooking('${b.id}')">Cancel</button>` : ''}
-        </td>
-      </tr>`;
-    }).join('');
+  // ── CALENDAR ───────────────────────────────
+  let calView = 'day';
+  let calDate = new Date();
+  calDate.setHours(0,0,0,0);
+
+  const HOURS = ['08:00 AM','09:00 AM','10:00 AM','11:00 AM','12:00 PM',
+    '01:00 PM','02:00 PM','03:00 PM','04:00 PM','05:00 PM',
+    '06:00 PM','07:00 PM','08:00 PM','09:00 PM','10:00 PM'];
+  const HOUR_NUMS = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
+  const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const MONTH_NAMES = ['January','February','March','April','May','June',
+    'July','August','September','October','November','December'];
+
+  function setCalView(view, btn) {
+    calView = view;
+    document.querySelectorAll('.view-toggle').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.cal-view').forEach(v => v.style.display = 'none');
+    document.getElementById('cal-' + view + '-view').style.display = 'block';
+    renderCalendar();
   }
 
-  function filterBookings() {
-    const status = document.getElementById('booking-filter').value;
-    const search = document.getElementById('booking-search').value.toLowerCase();
-    let data = allBookings;
-    if (status !== 'all') data = data.filter(b => b.status === status);
-    if (search) {
-      data = data.filter(b => {
-        const profile = allProfiles[b.user_id];
-        const name = profile ? `${profile.first_name} ${profile.last_name}`.toLowerCase() : '';
-        return name.includes(search) || (b.session_type || '').toLowerCase().includes(search);
-      });
-    }
-    renderBookings(data);
+  function calNav(dir) {
+    const d = new Date(calDate);
+    if (calView === 'day')   d.setDate(d.getDate() + dir);
+    if (calView === 'week')  d.setDate(d.getDate() + dir * 7);
+    if (calView === 'month') d.setMonth(d.getMonth() + dir);
+    calDate = d;
+    renderCalendar();
   }
+
+  function goToToday() {
+    calDate = new Date(); calDate.setHours(0,0,0,0);
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    updateNavLabel();
+    if (calView === 'day')   renderDayView();
+    if (calView === 'week')  renderWeekView();
+    if (calView === 'month') renderMonthView();
+  }
+
+  function updateNavLabel() {
+    const el = document.getElementById('cal-nav-label');
+    if (calView === 'day') {
+      el.textContent = calDate.toLocaleDateString('en-GB', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    } else if (calView === 'week') {
+      const start = getWeekStart(calDate);
+      const end = new Date(start); end.setDate(end.getDate() + 6);
+      el.textContent = start.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) + ' – ' + end.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+    } else {
+      el.textContent = MONTH_NAMES[calDate.getMonth()] + ' ' + calDate.getFullYear();
+    }
+  }
+
+  function getWeekStart(d) {
+    const day = new Date(d);
+    const diff = day.getDay();
+    day.setDate(day.getDate() - diff);
+    return day;
+  }
+
+  function bookingsForDate(dateStr) {
+    return allBookings.filter(b => b.booking_date === dateStr && b.status !== 'cancelled');
+  }
+
+  function parseHour(timeStr) {
+    if (!timeStr) return 9;
+    const [time, period] = timeStr.split(' ');
+    let [h] = time.split(':').map(Number);
+    if (period === 'PM' && h !== 12) h += 12;
+    if (period === 'AM' && h === 12) h = 0;
+    return h;
+  }
+
+  function dateStr(d) {
+    return d.toISOString().split('T')[0];
+  }
+
+  // ── DAY VIEW ──────────────────────────────
+  function renderDayView() {
+    const ds = dateStr(calDate);
+    const bookings = allBookings.filter(b => b.booking_date === ds);
+    const grid = document.getElementById('cal-day-grid');
+    const today = dateStr(new Date());
+    const nowHour = new Date().getHours();
+
+    let timeCol = '';
+    let eventsCol = '';
+
+    HOURS.forEach((label, i) => {
+      const h = HOUR_NUMS[i];
+      const isCurrent = ds === today && h === nowHour;
+      timeCol += `<div class="cal-time-slot">${label}</div>`;
+      eventsCol += `<div class="cal-hour-row${isCurrent ? ' current-hour' : ''}" data-hour="${h}"></div>`;
+    });
+
+    grid.innerHTML = `<div class="cal-time-col">${timeCol}</div><div class="cal-events-col" id="day-events-col">${eventsCol}</div>`;
+
+    // Place booking blocks
+    const col = document.getElementById('day-events-col');
+    bookings.forEach(b => {
+      const h = parseHour(b.booking_time);
+      const dur = b.duration_hours || 1;
+      const startIdx = HOUR_NUMS.indexOf(h);
+      if (startIdx < 0) return;
+      const top = startIdx * 64;
+      const height = dur * 64 - 4;
+      const profile = allProfiles[b.user_id];
+      const name = profile ? (profile.first_name + ' ' + (profile.last_name || '')).trim() : 'Member';
+      const membership = profile?.membership_type === 'monthly' ? 'Monthly Member' : 'Pay As You Go';
+
+      const el = document.createElement('div');
+      el.className = `cal-event${b.status === 'cancelled' ? ' cancelled' : b.status === 'completed' ? ' completed' : ''}`;
+      el.style.cssText = `top:${top}px;height:${height}px;`;
+      el.innerHTML = `
+        <div class="cal-event-name">${name}</div>
+        <div class="cal-event-detail">${b.session_type || 'Bay Session'} · ${dur}hr · ${b.players || 1} player${b.players > 1 ? 's' : ''}</div>
+        <div class="cal-event-detail">AED ${b.total_amount || 0} · ${membership}</div>
+        ${b.notes ? `<div class="cal-event-detail" style="margin-top:2px;font-style:italic;">"${b.notes}"</div>` : ''}
+      `;
+      el.onclick = () => openBookingModal(b.id);
+      col.appendChild(el);
+    });
+
+    if (!bookings.length) {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--sage);font-size:0.85rem;font-weight:300;text-align:center;pointer-events:none;';
+      empty.textContent = 'No bookings for this day';
+      col.appendChild(empty);
+    }
+  }
+
+  // ── WEEK VIEW ─────────────────────────────
+  function renderWeekView() {
+    const weekStart = getWeekStart(calDate);
+    const today = dateStr(new Date());
+    const days = Array.from({length:7}, (_,i) => {
+      const d = new Date(weekStart); d.setDate(d.getDate() + i); return d;
+    });
+
+    // Header
+    let headerHtml = '<div class="cal-week-time"></div>';
+    days.forEach(d => {
+      const ds = dateStr(d);
+      const isToday = ds === today;
+      headerHtml += `<div class="cal-week-day-header${isToday ? ' today' : ''}">
+        <span class="cal-week-day-num">${d.getDate()}</span><br>
+        ${DAY_NAMES[d.getDay()]}
+      </div>`;
+    });
+    document.getElementById('cal-week-header').innerHTML = headerHtml;
+
+    // Grid
+    let gridHtml = '';
+    HOURS.forEach((label, i) => {
+      const h = HOUR_NUMS[i];
+      gridHtml += `<div class="cal-week-time"><div class="cal-time-slot">${label}</div></div>`;
+      days.forEach(d => {
+        const ds = dateStr(d);
+        const isToday = ds === today;
+        const dayBookings = allBookings.filter(b => b.booking_date === ds && parseHour(b.booking_time) === h && b.status !== 'cancelled');
+        let cellContent = '';
+        dayBookings.forEach(b => {
+          const profile = allProfiles[b.user_id];
+          const name = profile ? profile.first_name + ' ' + (profile.last_name?.[0] || '') + '.' : 'Member';
+          cellContent += `<div class="cal-week-event" onclick="openBookingModal('${b.id}')">
+            <div class="cal-week-event-name">${name}</div>
+            <div class="cal-week-event-sub">${b.players || 1}👤 · ${b.duration_hours || 1}hr · AED${b.total_amount||0}</div>
+          </div>`;
+        });
+        gridHtml += `<div class="cal-week-cell${isToday ? ' today-col' : ''}">${cellContent}</div>`;
+      });
+    });
+    document.getElementById('cal-week-grid').innerHTML = gridHtml;
+  }
+
+  // ── MONTH VIEW ────────────────────────────
+  function renderMonthView() {
+    const year = calDate.getFullYear();
+    const month = calDate.getMonth();
+    const today = dateStr(new Date());
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+    let html = '<div class="cal-month-header-row">';
+    ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d => {
+      html += `<div class="cal-month-day-name">${d}</div>`;
+    });
+    html += '</div><div class="cal-month-cells">';
+
+    // Prev month padding
+    for (let i = firstDay - 1; i >= 0; i--) {
+      const d = daysInPrevMonth - i;
+      html += `<div class="cal-month-cell other-month"><span class="cal-month-num" style="opacity:0.3;">${d}</span></div>`;
+    }
+
+    // This month
+    for (let d = 1; d <= daysInMonth; d++) {
+      const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const isToday = ds === today;
+      const dayBookings = allBookings.filter(b => b.booking_date === ds && b.status !== 'cancelled');
+      const show = dayBookings.slice(0,3);
+      const more = dayBookings.length - 3;
+
+      let events = show.map(b => {
+        const profile = allProfiles[b.user_id];
+        const name = profile ? profile.first_name + ' ' + (profile.last_name?.[0]||'') + '.' : 'Member';
+        return `<span class="cal-month-event" onclick="openBookingModal('${b.id}')">${b.booking_time || ''} ${name}</span>`;
+      }).join('');
+      if (more > 0) events += `<span class="cal-month-more">+${more} more</span>`;
+
+      html += `<div class="cal-month-cell${isToday ? ' today-cell' : ''}">
+        <span class="cal-month-num">${d}</span>
+        ${events}
+      </div>`;
+    }
+
+    // Next month padding
+    const remaining = 42 - (firstDay + daysInMonth);
+    for (let d = 1; d <= remaining; d++) {
+      html += `<div class="cal-month-cell other-month"><span class="cal-month-num" style="opacity:0.3;">${d}</span></div>`;
+    }
+
+    html += '</div>';
+    document.getElementById('cal-month-grid').innerHTML = html;
+  }
+
+  // ── RENDER BOOKINGS (called after data loads) ──
+  function renderBookings() { renderCalendar(); }
+  function filterBookings() { renderCalendar(); }
 
   function openBookingModal(id) {
     const b = allBookings.find(x => x.id === id);
@@ -1019,6 +1503,115 @@
   document.querySelectorAll('.modal-overlay').forEach(el => {
     el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
   });
+  // ── PRICING ────────────────────────────────
+  const PRICING_DEFAULTS = {
+    peak_rate: 230, peak_start: '17:00', peak_end: '23:00',
+    peak_days: [5, 6],
+    offpeak_rate: 150, offpeak_start: '08:00', offpeak_end: '17:00',
+    offpeak_days: [0, 1, 2, 3, 4],
+    membership_rate: 750, membership_hours: 8, membership_peak_uses: 3,
+    guest_rate: 50, lesson_rate: 350, lesson_duration: 1, corporate_rate: 800
+  };
+
+  let currentPricing = { ...PRICING_DEFAULTS };
+
+  async function loadPricing() {
+    const { data } = await sb.from('pricing').select('*').eq('id', 'loft_and_lie').single();
+    if (data?.config) {
+      currentPricing = { ...PRICING_DEFAULTS, ...data.config };
+    }
+    populatePricingForm();
+  }
+
+  function populatePricingForm() {
+    const p = currentPricing;
+    document.getElementById('p-peak-rate').value       = p.peak_rate;
+    document.getElementById('p-peak-start').value      = p.peak_start;
+    document.getElementById('p-peak-end').value        = p.peak_end;
+    document.getElementById('p-offpeak-rate').value    = p.offpeak_rate;
+    document.getElementById('p-offpeak-start').value   = p.offpeak_start;
+    document.getElementById('p-offpeak-end').value     = p.offpeak_end;
+    document.getElementById('p-membership-rate').value = p.membership_rate;
+    document.getElementById('p-membership-hours').value= p.membership_hours;
+    document.getElementById('p-membership-peak').value = p.membership_peak_uses;
+    document.getElementById('p-guest-rate').value      = p.guest_rate;
+    document.getElementById('p-lesson-rate').value     = p.lesson_rate;
+    document.getElementById('p-lesson-duration').value = p.lesson_duration;
+    document.getElementById('p-corporate-rate').value  = p.corporate_rate;
+
+    // Set day toggles
+    document.querySelectorAll('#peak-days .day-toggle').forEach(btn => {
+      btn.classList.toggle('active', p.peak_days.includes(parseInt(btn.dataset.day)));
+    });
+    document.querySelectorAll('#offpeak-days .day-toggle').forEach(btn => {
+      btn.classList.toggle('active', p.offpeak_days.includes(parseInt(btn.dataset.day)));
+    });
+
+    updatePricingPreview();
+  }
+
+  function toggleDay(btn) {
+    btn.classList.toggle('active');
+    updatePricingPreview();
+  }
+
+  function updatePricingPreview() {
+    const peakRate     = document.getElementById('p-peak-rate')?.value || PRICING_DEFAULTS.peak_rate;
+    const offpeakRate  = document.getElementById('p-offpeak-rate')?.value || PRICING_DEFAULTS.offpeak_rate;
+    const memberRate   = document.getElementById('p-membership-rate')?.value || PRICING_DEFAULTS.membership_rate;
+    const lessonRate   = document.getElementById('p-lesson-rate')?.value || PRICING_DEFAULTS.lesson_rate;
+
+    const prevPeak       = document.getElementById('prev-peak');
+    const prevOffpeak    = document.getElementById('prev-offpeak');
+    const prevMembership = document.getElementById('prev-membership');
+    const prevLesson     = document.getElementById('prev-lesson');
+
+    if (prevPeak)       prevPeak.textContent       = 'AED ' + peakRate;
+    if (prevOffpeak)    prevOffpeak.textContent     = 'AED ' + offpeakRate;
+    if (prevMembership) prevMembership.textContent  = 'AED ' + memberRate;
+    if (prevLesson)     prevLesson.textContent      = 'AED ' + lessonRate;
+  }
+
+  // Live preview on input
+  document.addEventListener('input', e => {
+    const pricingInputs = ['p-peak-rate','p-offpeak-rate','p-membership-rate','p-lesson-rate'];
+    if (pricingInputs.includes(e.target.id)) updatePricingPreview();
+  });
+
+  async function savePricing() {
+    const getPeakDays    = () => [...document.querySelectorAll('#peak-days .day-toggle.active')].map(b => parseInt(b.dataset.day));
+    const getOffpeakDays = () => [...document.querySelectorAll('#offpeak-days .day-toggle.active')].map(b => parseInt(b.dataset.day));
+
+    const config = {
+      peak_rate:           parseInt(document.getElementById('p-peak-rate').value),
+      peak_start:          document.getElementById('p-peak-start').value,
+      peak_end:            document.getElementById('p-peak-end').value,
+      peak_days:           getPeakDays(),
+      offpeak_rate:        parseInt(document.getElementById('p-offpeak-rate').value),
+      offpeak_start:       document.getElementById('p-offpeak-start').value,
+      offpeak_end:         document.getElementById('p-offpeak-end').value,
+      offpeak_days:        getOffpeakDays(),
+      membership_rate:     parseInt(document.getElementById('p-membership-rate').value),
+      membership_hours:    parseInt(document.getElementById('p-membership-hours').value),
+      membership_peak_uses:parseInt(document.getElementById('p-membership-peak').value),
+      guest_rate:          parseInt(document.getElementById('p-guest-rate').value),
+      lesson_rate:         parseInt(document.getElementById('p-lesson-rate').value),
+      lesson_duration:     parseFloat(document.getElementById('p-lesson-duration').value),
+      corporate_rate:      parseInt(document.getElementById('p-corporate-rate').value),
+      updated_at:          new Date().toISOString()
+    };
+
+    const { error } = await sb.from('pricing').upsert({ id: 'loft_and_lie', config });
+
+    if (error) {
+      showToast('Error saving pricing. Please try again.');
+      console.error(error);
+    } else {
+      currentPricing = config;
+      showToast('Pricing saved and published live.');
+      document.getElementById('pricing-save-status').textContent = 'Last saved: ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    }
+  }
 </script>
 </body>
 </html>

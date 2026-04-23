@@ -678,17 +678,18 @@
         </div>
 
         <div class="bay-grid">
-          <div class="bay-card" onclick="selectBayType(this,'Bay Session',150,'bay')" data-type="bay">
+          <div class="bay-card" id="bay-card-bay" onclick="selectBayType(this,'Bay Session',window.livePrice?.peak_rate||150,'bay')" data-type="bay">
             <div style="font-size:1.6rem; margin-bottom:10px;">⛳</div>
             <h4>Bay Session</h4>
             <p>Trackman simulator, up to 4 players</p>
-            <div class="bay-price">AED 150 <span>/hr</span></div>
+            <div class="bay-price" id="bay-price-display">AED 150 <span>/hr</span></div>
+            <div id="bay-offpeak-note" style="font-size:0.72rem;color:var(--sage);margin-top:4px;display:none;"></div>
           </div>
-          <div class="bay-card" onclick="selectBayType(this,'PGA Pro Lesson',350,'lesson')" data-type="lesson">
+          <div class="bay-card" id="bay-card-lesson" onclick="selectBayType(this,'PGA Pro Lesson',window.livePrice?.lesson_rate||350,'lesson')" data-type="lesson">
             <div style="font-size:1.6rem; margin-bottom:10px;">🏌️</div>
             <h4>PGA Pro Lesson</h4>
             <p>1-on-1 with our certified PGA professional</p>
-            <div class="bay-price">AED 350 <span>/hr</span></div>
+            <div class="bay-price" id="lesson-price-display">AED 350 <span>/hr</span></div>
           </div>
         </div>
 
@@ -900,6 +901,59 @@
     }
   }
 
+  // ── LIVE PRICING ──────────────────────────────
+  window.livePrice = null;
+
+  async function fetchLivePricing() {
+    const { data } = await sb.from('pricing').select('config').eq('id', 'loft_and_lie').single();
+    if (data?.config) {
+      window.livePrice = data.config;
+      applyLivePricing(data.config);
+    }
+  }
+
+  function applyLivePricing(p) {
+    // Update bay session card
+    const now = new Date();
+    const hour = now.getHours();
+    const day = now.getDay();
+    const isPeak = p.peak_days?.includes(day) &&
+      hour >= parseInt(p.peak_start?.split(':')[0] || 17) &&
+      hour < parseInt(p.peak_end?.split(':')[0] || 23);
+
+    const bayRate = isPeak ? p.peak_rate : p.offpeak_rate;
+    const bayDisplay = document.getElementById('bay-price-display');
+    const offpeakNote = document.getElementById('bay-offpeak-note');
+    const bayCard = document.getElementById('bay-card-bay');
+    const lessonDisplay = document.getElementById('lesson-price-display');
+
+    if (bayDisplay) bayDisplay.innerHTML = `AED ${bayRate} <span>/hr</span>`;
+    if (offpeakNote) {
+      offpeakNote.style.display = 'block';
+      offpeakNote.textContent = isPeak
+        ? `Peak rate · Off-peak: AED ${p.offpeak_rate}/hr`
+        : `Off-peak rate · Peak: AED ${p.peak_rate}/hr`;
+    }
+    if (bayCard) {
+      bayCard.setAttribute('onclick', `selectBayType(this,'Bay Session',${bayRate},'bay')`);
+    }
+    if (lessonDisplay && p.lesson_rate) {
+      lessonDisplay.innerHTML = `AED ${p.lesson_rate} <span>/hr</span>`;
+      const lessonCard = document.getElementById('bay-card-lesson');
+      if (lessonCard) lessonCard.setAttribute('onclick', `selectBayType(this,'PGA Pro Lesson',${p.lesson_rate},'lesson')`);
+    }
+
+    // Update membership section
+    const mTitle = document.getElementById('membership-title');
+    const mDesc  = document.getElementById('membership-desc');
+    if (mDesc && p.membership_rate) {
+      const mtype = currentProfile?.membership_type || 'pay_as_you_go';
+      if (mtype === 'pay_as_you_go') {
+        mDesc.textContent = `Book bays at AED ${p.offpeak_rate}/hr off-peak and AED ${p.peak_rate}/hr peak. No commitment required.`;
+      }
+    }
+  }
+
   // ── SIGN IN ────────────────────────────────
   async function signIn() {
     const email = document.getElementById('login-email').value.trim();
@@ -1012,6 +1066,9 @@
 
   // ── LOAD DASHBOARD ─────────────────────────
   async function loadDashboard() {
+    // Load live pricing
+    await fetchLivePricing();
+
     // Load profile
     const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
     currentProfile = profile;
