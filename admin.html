@@ -622,7 +622,7 @@
               </tr>
             </thead>
             <tbody id="today-bookings-body">
-              <tr class="empty-row"><td colspan="7">Loading...</td></tr>
+              <tr class="empty-row"><td colspan="8">Loading...</td></tr>
             </tbody>
           </table>
         </div>
@@ -1019,26 +1019,11 @@
   }
 
   async function loadAllData() {
-    // Load member bookings
+    // Load all bookings (members + guests all in one table)
     const { data: bookings } = await sb
       .from('bookings')
       .select('*')
       .order('created_at', { ascending: false });
-
-    // Load guest bookings (homepage, no login)
-    const { data: guestBookings } = await sb
-      .from('guest_bookings')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    // Normalise guest bookings to same shape — mark with guest flag
-    const normalisedGuest = (guestBookings || []).map(b => ({
-      ...b,
-      user_id: null,
-      _is_guest: true,
-      _guest_name: b.guest_name,
-      _guest_email: b.guest_email
-    }));
 
     // Load all profiles
     const { data: profiles } = await sb
@@ -1046,8 +1031,14 @@
       .select('*')
       .order('created_at', { ascending: false });
 
-    allBookings = [...(bookings || []), ...normalisedGuest].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
-    allMembers  = profiles || [];
+    // Mark guest bookings (no user_id) vs member bookings
+    allBookings = (bookings || []).map(b => ({
+      ...b,
+      _is_guest: !b.user_id,
+      _guest_name: b.guest_name,
+      _guest_email: b.guest_email
+    }));
+    allMembers = profiles || [];
 
     // Build profile lookup by id
     allProfiles = {};
@@ -1084,8 +1075,12 @@
       tbody.innerHTML = todayBookings.map(b => {
         const profile = allProfiles[b.user_id];
         const name = b._is_guest ? (b._guest_name || 'Guest') : (profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : 'Unknown');
+        const typeBadge = b._is_guest
+          ? '<span class="badge badge-amber">Guest</span>'
+          : '<span class="badge badge-green">Member</span>';
         return `<tr>
           <td><strong>${name}</strong></td>
+          <td>${typeBadge}</td>
           <td>${b.session_type || '—'}</td>
           <td>${b.booking_time || '—'}</td>
           <td>${b.duration_hours || 1}hr</td>
@@ -1116,6 +1111,14 @@
   let calBay = 'all';
   let calDate = new Date();
   calDate.setHours(0,0,0,0);
+
+  // Helper: get local date string YYYY-MM-DD (avoids UTC offset issues)
+  function localDateStr(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
 
   // Bay colours
   const BAY_COLOURS = {
@@ -1150,7 +1153,7 @@
     '01:00 PM','02:00 PM','03:00 PM','04:00 PM','05:00 PM',
     '06:00 PM','07:00 PM','08:00 PM','09:00 PM','10:00 PM'];
   const HOUR_NUMS = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
-  const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; // index matches JS getDay()
   const MONTH_NAMES = ['January','February','March','April','May','June',
     'July','August','September','October','November','December'];
 
@@ -1199,7 +1202,8 @@
 
   function getWeekStart(d) {
     const day = new Date(d);
-    const diff = day.getDay();
+    // Start from Monday (1). If Sunday (0), go back 6 days
+    const diff = (day.getDay() + 6) % 7;
     day.setDate(day.getDate() - diff);
     return day;
   }
@@ -1218,7 +1222,7 @@
   }
 
   function dateStr(d) {
-    return d.toISOString().split('T')[0];
+    return localDateStr(d);
   }
 
   // ── DAY VIEW ──────────────────────────────
@@ -1342,35 +1346,57 @@
     });
     header.innerHTML = headerHtml;
 
-    // Grid
+    // Grid — use relative positioning columns with absolute events for multi-hour spans
     const grid = document.getElementById('cal-week-grid');
     grid.style.gridTemplateColumns = '56px repeat(7, 1fr)';
-    let gridHtml = '';
-    HOURS.forEach((label, i) => {
-      const h = HOUR_NUMS[i];
-      gridHtml += `<div class="cal-week-time"><div class="cal-time-slot">${label}</div></div>`;
-      days.forEach(d => {
-        const ds = dateStr(d);
-        const isToday = ds === today;
-        const dayBookings = filteredBookings.filter(b => b.booking_date === ds && parseHour(b.booking_time) === h);
-        let cellContent = '';
-        dayBookings.forEach(b => {
-          const profile = allProfiles[b.user_id];
-          const name = profile ? profile.first_name + ' ' + (profile.last_name?.[0] || '') + '.' : 'Member';
-          const bayNum = getBayNumber(b);
-          const c = BAY_COLOURS[bayNum] || BAY_COLOURS[1];
-          const bg = b.status === 'cancelled' ? 'rgba(192,57,43,0.15)' : b.status === 'completed' ? 'rgba(168,197,168,0.3)' : c.bg;
-          const txt = (b.status === 'cancelled' || b.status === 'completed') ? 'var(--green)' : 'var(--cream)';
-          const sub = (b.status === 'cancelled' || b.status === 'completed') ? 'var(--sage)' : 'rgba(247,243,235,0.7)';
-          cellContent += `<div class="cal-week-event" onclick="openBookingModal('${b.id}')" style="background:${bg};border-left:2px solid ${c.border};">
-            <div class="cal-week-event-name" style="color:${txt};">${name}</div>
-            <div class="cal-week-event-sub" style="color:${sub};">Bay ${bayNum} · ${b.players||1}👤 · ${b.duration_hours||1}hr</div>
-          </div>`;
-        });
-        gridHtml += `<div class="cal-week-cell${isToday ? ' today-col' : ''}">${cellContent}</div>`;
-      });
+
+    // Build time column
+    let timeColHtml = '';
+    HOURS.forEach((label) => {
+      timeColHtml += `<div class="cal-time-slot" style="height:56px;border-bottom:1px solid rgba(45,90,61,0.06);">${label}</div>`;
     });
-    grid.innerHTML = gridHtml;
+
+    // Build one column per day — relative positioned, with absolute events
+    let dayColsHtml = days.map(d => {
+      const ds = dateStr(d);
+      const isToday = ds === today;
+      const dayBookings = filteredBookings.filter(b => b.booking_date === ds);
+
+      // Hour rows (background grid)
+      let rows = HOURS.map((_, i) => {
+        const h = HOUR_NUMS[i];
+        return `<div style="height:56px;border-bottom:1px solid rgba(45,90,61,0.06);border-left:1px solid rgba(45,90,61,0.06);"></div>`;
+      }).join('');
+
+      // Absolute event blocks
+      let events = '';
+      dayBookings.forEach(b => {
+        const h = parseHour(b.booking_time);
+        const dur = b.duration_hours || 1;
+        const startIdx = HOUR_NUMS.indexOf(h);
+        if (startIdx < 0) return;
+        const top = startIdx * 56;
+        const height = dur * 56 - 3;
+        const profile = allProfiles[b.user_id];
+        const isGuest = !b.user_id;
+        const name = isGuest ? (b.guest_name || 'Guest') : (profile ? profile.first_name + ' ' + (profile.last_name?.[0]||'') + '.' : 'Member');
+        const bayNum = getBayNumber(b);
+        const c = BAY_COLOURS[bayNum] || BAY_COLOURS[1];
+        const bg = b.status==='cancelled'?'rgba(192,57,43,0.15)':b.status==='completed'?'rgba(168,197,168,0.3)':c.bg;
+        const txt = (b.status==='cancelled'||b.status==='completed')?'var(--green)':'var(--cream)';
+        const sub = (b.status==='cancelled'||b.status==='completed')?'var(--sage)':'rgba(247,243,235,0.75)';
+        const guestTag = isGuest ? `<span style="font-size:0.52rem;background:rgba(212,139,42,0.3);color:#d4a847;padding:1px 4px;border-radius:2px;margin-left:3px;">GUEST</span>` : '';
+        events += `<div onclick="openBookingModal('${b.id}')" style="position:absolute;top:${top}px;height:${height}px;left:3px;right:3px;background:${bg};border-left:3px solid ${c.border};padding:4px 6px;cursor:pointer;overflow:hidden;z-index:2;border-radius:1px;" onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1">
+          <div style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:0.65rem;color:${txt};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}${guestTag}</div>
+          <div style="font-size:0.58rem;color:${sub};margin-top:1px;">Bay ${bayNum} · ${dur}hr · ${b.players||1}👤</div>
+          <div style="font-size:0.58rem;color:${sub};">AED ${b.total_amount||0}</div>
+        </div>`;
+      });
+
+      return `<div style="position:relative;border-left:1px solid rgba(45,90,61,0.06);${isToday?'background:rgba(168,197,168,0.04);':''}">${rows}${events}</div>`;
+    }).join('');
+
+    grid.innerHTML = `<div style="display:flex;flex-direction:column;">${timeColHtml}</div>${dayColsHtml}`;
   }
 
   // ── MONTH VIEW ────────────────────────────

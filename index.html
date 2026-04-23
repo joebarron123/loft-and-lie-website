@@ -1064,8 +1064,8 @@
       <div class="price-card reveal">
         <div class="price-tag">Drop-In</div>
         <div class="price-name">Pay as You Play</div>
-        <div class="price-amount">AED 150</div>
-        <div class="price-unit">per hour / per bay</div>
+        <div class="price-amount" id="static-offpeak-rate">AED 150</div>
+        <div class="price-unit" id="static-offpeak-unit">per hour / per bay (off-peak)</div>
         <div class="price-divider"></div>
         <ul class="price-features">
           <li>Trackman simulator bay</li>
@@ -1080,7 +1080,7 @@
         <div class="popular-badge">Most Popular</div>
         <div class="price-tag">Membership</div>
         <div class="price-name">Monthly Pass</div>
-        <div class="price-amount">AED 999</div>
+        <div class="price-amount" id="static-membership-rate">AED 999</div>
         <div class="price-unit">per month / unlimited off-peak</div>
         <div class="price-divider"></div>
         <ul class="price-features">
@@ -1096,7 +1096,7 @@
       <div class="price-card reveal">
         <div class="price-tag">Private Coaching</div>
         <div class="price-name">PGA Pro Session</div>
-        <div class="price-amount">AED 350</div>
+        <div class="price-amount" id="static-lesson-rate">AED 350</div>
         <div class="price-unit">per 60-min lesson</div>
         <div class="price-divider"></div>
         <ul class="price-features">
@@ -1134,27 +1134,17 @@
 
         <!-- STEP 1: SESSION -->
         <div id="step-1" class="booking-step active">
-          <p style="font-family:'Montserrat',sans-serif;font-size:0.78rem;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:var(--green);margin-bottom:20px;">What would you like to book?</p>
-          <!-- Live pricing loaded from Supabase -->
-          <div id="pricing-loading" style="font-family:'Montserrat',sans-serif;font-size:0.75rem;color:var(--sage);margin-bottom:20px;">Loading pricing...</div>
+          <div id="pricing-loading" style="font-family:'Montserrat',sans-serif;font-size:0.75rem;color:var(--sage);margin-bottom:16px;">Loading pricing...</div>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
-            <div class="session-card" id="card-bay-peak" onclick="selectSession(this)" data-type="bay" data-price="230" data-label="Bay Session (Peak)">
+          <!-- Session type cards -->
+          <p style="font-family:'Montserrat',sans-serif;font-size:0.78rem;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:var(--green);margin-bottom:16px;">Session Type</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:32px;max-width:560px;">
+            <div class="session-card" id="card-bay" onclick="selectSession(this)" data-type="bay" data-price="150" data-label="Bay Session">
               <div class="session-icon">⛳</div>
               <div class="session-name">Bay Session</div>
-              <div style="display:inline-block;background:rgba(212,139,42,0.12);color:#a86c10;font-family:'Montserrat',sans-serif;font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:2px 8px;margin-bottom:8px;">Peak</div>
-              <div class="session-desc">Fri & Sat evenings · Up to 4 players</div>
-              <div class="session-price" id="price-bay-peak">AED 230<span>/hr</span></div>
+              <div class="session-desc">Trackman simulator · Up to 4 players</div>
+              <div class="session-price" id="price-bay-display">AED 150<span>–230/hr</span></div>
             </div>
-            <div class="session-card" id="card-bay-offpeak" onclick="selectSession(this)" data-type="bay" data-price="150" data-label="Bay Session (Off-Peak)">
-              <div class="session-icon">⛳</div>
-              <div class="session-name">Bay Session</div>
-              <div style="display:inline-block;background:rgba(168,197,168,0.2);color:var(--green);font-family:'Montserrat',sans-serif;font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:2px 8px;margin-bottom:8px;">Off-Peak</div>
-              <div class="session-desc">Sun–Thu · Up to 4 players</div>
-              <div class="session-price" id="price-bay-offpeak">AED 150<span>/hr</span></div>
-            </div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:28px;max-width:50%;">
             <div class="session-card" id="card-lesson" onclick="selectSession(this)" data-type="lesson" data-price="350" data-label="PGA Pro Lesson">
               <div class="session-icon">🏌️</div>
               <div class="session-name">PGA Pro Lesson</div>
@@ -1163,32 +1153,38 @@
             </div>
           </div>
 
-          <!-- Peak/off-peak info strip -->
-          <div id="peak-info-strip" style="display:none;align-items:center;gap:16px;margin-bottom:20px;padding:14px 20px;background:var(--cream);border:1px solid rgba(45,90,61,0.1);">
-            <div id="peak-strip-icon" style="font-size:1.1rem;"></div>
-            <div>
-              <div id="peak-strip-title" style="font-family:'Montserrat',sans-serif;font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--green);"></div>
-              <div id="peak-strip-desc" style="font-size:0.8rem;font-weight:300;color:var(--charcoal);margin-top:2px;"></div>
-            </div>
-          </div>
+          <!-- Options row — shown after selection -->
+          <div id="booking-options" style="display:none;max-width:560px;">
 
-          <div id="player-count-row" style="display:none;align-items:center;gap:20px;margin-bottom:20px;padding:18px 24px;background:var(--cream);border:1px solid rgba(45,90,61,0.12);">
-            <span style="font-family:'Montserrat',sans-serif;font-size:0.75rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--green);">Players</span>
-            <div style="display:flex;align-items:center;gap:14px;margin-left:auto;">
-              <button class="count-btn" onclick="changeCount(-1)">−</button>
-              <span id="player-count" style="font-family:'Montserrat',sans-serif;font-size:1.3rem;font-weight:700;color:var(--green);min-width:28px;text-align:center;">1</span>
-              <button class="count-btn" onclick="changeCount(1)">+</button>
+            <!-- Duration dropdown -->
+            <div style="margin-bottom:20px;">
+              <label style="font-family:'Montserrat',sans-serif;font-size:0.72rem;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--green);display:block;margin-bottom:8px;">Duration</label>
+              <div style="position:relative;">
+                <select id="duration-select" onchange="selectDurationDropdown(this.value)" style="width:100%;appearance:none;-webkit-appearance:none;border:1.5px solid rgba(45,90,61,0.2);background:var(--cream);padding:13px 40px 13px 16px;font-family:'Montserrat',sans-serif;font-size:0.82rem;font-weight:600;color:var(--charcoal);outline:none;cursor:pointer;letter-spacing:0.04em;">
+                  <option value="0.5">30 minutes</option>
+                  <option value="1" selected>1 hour</option>
+                  <option value="1.5">1 hour 30 minutes</option>
+                  <option value="2">2 hours</option>
+                  <option value="2.5">2 hours 30 minutes</option>
+                  <option value="3">3 hours</option>
+                  <option value="3.5">3 hours 30 minutes</option>
+                  <option value="4">4 hours</option>
+                </select>
+                <div style="position:absolute;right:14px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--green);font-size:0.7rem;">▼</div>
+              </div>
             </div>
-            <span style="font-size:0.82rem;color:var(--sage);">Max 4 per bay</span>
-          </div>
 
-          <div id="duration-row" style="display:none;align-items:center;gap:20px;margin-bottom:28px;padding:18px 24px;background:var(--cream);border:1px solid rgba(45,90,61,0.12);">
-            <span style="font-family:'Montserrat',sans-serif;font-size:0.75rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--green);">Duration</span>
-            <div style="display:flex;gap:8px;margin-left:auto;">
-              <button class="dur-btn active" data-hours="1" onclick="selectDuration(this,1)">1 Hour</button>
-              <button class="dur-btn" data-hours="2" onclick="selectDuration(this,2)">2 Hours</button>
-              <button class="dur-btn" data-hours="3" onclick="selectDuration(this,3)">3 Hours</button>
+            <!-- Players (bay only) -->
+            <div id="player-count-row" style="display:none;align-items:center;gap:20px;margin-bottom:20px;padding:16px 20px;background:var(--cream);border:1px solid rgba(45,90,61,0.12);">
+              <span style="font-family:'Montserrat',sans-serif;font-size:0.72rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--green);">Players</span>
+              <div style="display:flex;align-items:center;gap:14px;margin-left:auto;">
+                <button class="count-btn" onclick="changeCount(-1)">−</button>
+                <span id="player-count" style="font-family:'Montserrat',sans-serif;font-size:1.3rem;font-weight:700;color:var(--green);min-width:28px;text-align:center;">1</span>
+                <button class="count-btn" onclick="changeCount(1)">+</button>
+              </div>
+              <span style="font-size:0.82rem;color:var(--sage);">Max 4 per bay</span>
             </div>
+
           </div>
 
           <button class="btn-primary" onclick="goToStep(2)" id="step1-next" disabled style="opacity:0.4;cursor:not-allowed;">Continue →</button>
@@ -1210,6 +1206,14 @@
               <p style="font-family:'Montserrat',sans-serif;font-size:0.78rem;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:var(--green);margin-bottom:18px;">Select a Time</p>
               <div id="time-slots" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
               <p id="time-placeholder" style="font-size:0.85rem;font-weight:300;color:var(--sage);margin-top:8px;">Pick a date to see available times.</p>
+              <!-- Rate strip — shown after time selected -->
+              <div id="peak-info-strip" style="display:none;align-items:center;gap:14px;margin-top:16px;padding:14px 18px;background:var(--cream);border:1px solid rgba(45,90,61,0.1);">
+                <div id="peak-strip-icon" style="font-size:1.1rem;"></div>
+                <div>
+                  <div id="peak-strip-title" style="font-family:'Montserrat',sans-serif;font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--green);"></div>
+                  <div id="peak-strip-desc" style="font-size:0.8rem;font-weight:300;color:var(--charcoal);margin-top:2px;"></div>
+                </div>
+              </div>
             </div>
           </div>
           <div style="display:flex;gap:14px;margin-top:36px;">
@@ -1356,6 +1360,8 @@
 
     // ─── STATE ─────────────────────────────
     let booking = { type: null, price: 0, label: '', players: 1, hours: 1, date: null, time: null };
+    // Sync hours from dropdown on change
+    document.addEventListener('change', e => { if (e.target.id === 'duration-select') booking.hours = parseFloat(e.target.value); });
     let calYear, calMonth;
     let livePrice = null;
     let existingBookings = []; // from Supabase
@@ -1402,32 +1408,24 @@
     }
 
     function applyPricingToCards(p) {
-      // Update peak card
-      const peakEl = document.getElementById('price-bay-peak');
-      if (peakEl) peakEl.innerHTML = `AED ${p.peak_rate || 230}<span>/hr</span>`;
-      const peakCard = document.getElementById('card-bay-peak');
-      if (peakCard) peakCard.dataset.price = p.peak_rate || 230;
+      // Update booking section cards
+      const bayDisplay = document.getElementById('price-bay-display');
+      if (bayDisplay) bayDisplay.innerHTML = `AED ${p.offpeak_rate||150}<span>–${p.peak_rate||230}/hr</span>`;
+      const bayCard = document.getElementById('card-bay');
+      if (bayCard) bayCard.dataset.price = p.offpeak_rate || 150;
 
-      // Update off-peak card
-      const offEl = document.getElementById('price-bay-offpeak');
-      if (offEl) offEl.innerHTML = `AED ${p.offpeak_rate || 150}<span>/hr</span>`;
-      const offCard = document.getElementById('card-bay-offpeak');
-      if (offCard) offCard.dataset.price = p.offpeak_rate || 150;
-
-      // Update peak card subtitle
-      const peakDayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-      const peakDays = (p.peak_days || [5,6]).map(d => peakDayNames[d]).join(' & ');
-      const offDays = (p.offpeak_days || [0,1,2,3,4]).map(d => peakDayNames[d]).join(', ');
-      const peakDescs = document.querySelectorAll('#card-bay-peak .session-desc');
-      peakDescs.forEach(el => el.textContent = `${peakDays} · ${p.peak_start||'17:00'}–${p.peak_end||'23:00'} · Up to 4 players`);
-      const offDescs = document.querySelectorAll('#card-bay-offpeak .session-desc');
-      offDescs.forEach(el => el.textContent = `${offDays} · ${p.offpeak_start||'08:00'}–${p.offpeak_end||'17:00'} · Up to 4 players`);
-
-      // Update lesson price
       const lessonEl = document.getElementById('price-lesson');
       if (lessonEl) lessonEl.innerHTML = `AED ${p.lesson_rate || 350}<span>/hr</span>`;
       const lessonCard = document.getElementById('card-lesson');
       if (lessonCard) lessonCard.dataset.price = p.lesson_rate || 350;
+
+      // Also update the static pricing section on the page
+      const staticOff = document.getElementById('static-offpeak-rate');
+      if (staticOff) staticOff.textContent = `AED ${p.offpeak_rate || 150}`;
+      const staticMem = document.getElementById('static-membership-rate');
+      if (staticMem) staticMem.textContent = `AED ${p.membership_rate || 750}`;
+      const staticLesson = document.getElementById('static-lesson-rate');
+      if (staticLesson) staticLesson.textContent = `AED ${p.lesson_rate || 350}`;
     }
 
     // ─── LOAD REAL AVAILABILITY ────────────
@@ -1453,22 +1451,23 @@
     function selectSession(el) {
       document.querySelectorAll('.session-card').forEach(c => c.classList.remove('selected'));
       el.classList.add('selected');
-      booking.type = el.dataset.type;
+      booking.type  = el.dataset.type;
       booking.price = parseInt(el.dataset.price);
       booking.label = el.dataset.label;
 
-      const pcr = document.getElementById('player-count-row');
-      const dr  = document.getElementById('duration-row');
+      // Show options
+      document.getElementById('booking-options').style.display = 'block';
 
+      // Show players only for bay session
+      const pcr = document.getElementById('player-count-row');
       if (booking.type === 'bay') {
         pcr.style.display = 'flex';
-        dr.style.display  = 'flex';
       } else {
         pcr.style.display = 'none';
-        dr.style.display  = 'flex';
-        booking.players   = 1;
+        booking.players = 1;
       }
 
+      // Enable continue
       const btn = document.getElementById('step1-next');
       btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer';
     }
@@ -1479,10 +1478,8 @@
       el.textContent = booking.players;
     }
 
-    function selectDuration(btn, h) {
-      document.querySelectorAll('.dur-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      booking.hours = h;
+    function selectDurationDropdown(val) {
+      booking.hours = parseFloat(val);
     }
 
     function goToStep(n) {
@@ -1631,7 +1628,13 @@
       const dateStr = booking.date
         ? days[booking.date.getDay()] + ', ' + booking.date.getDate() + ' ' + months[booking.date.getMonth()] + ' ' + booking.date.getFullYear()
         : '—';
-      const durStr = booking.hours + (booking.hours === 1 ? ' Hour' : ' Hours');
+      const durStr = (() => {
+        const h = booking.hours;
+        if (h === 0.5) return '30 minutes';
+        const hrs = Math.floor(h);
+        const mins = (h % 1) === 0.5 ? ' 30 mins' : '';
+        return hrs + (hrs === 1 ? ' hour' : ' hours') + mins;
+      })();
       const total  = booking.price * booking.hours;
 
       document.getElementById('sum-type').textContent     = booking.label;
@@ -1710,8 +1713,10 @@
       document.querySelectorAll('.session-card').forEach(c => c.classList.remove('selected'));
       document.getElementById('player-count').textContent = '1';
       document.getElementById('player-count-row').style.display = 'none';
-      document.getElementById('duration-row').style.display = 'none';
+      document.getElementById('booking-options').style.display = 'none';
       document.getElementById('peak-info-strip').style.display = 'none';
+      const dur = document.getElementById('duration-select');
+      if (dur) { dur.value = '1'; }
       document.getElementById('fname').value  = '';
       document.getElementById('lname').value  = '';
       document.getElementById('femail').value = '';
