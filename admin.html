@@ -1128,13 +1128,9 @@
     4: { bg: '#4a1a6b', border: '#b47add' },
   };
 
-  // Assign bay numbers to bookings deterministically by time slot
-  // In production you would store bay_number in the bookings table
+  // Use real bay_number from database; fall back to 1 if not yet set
   function getBayNumber(booking) {
-    if (booking.bay_number) return booking.bay_number;
-    // Deterministic assignment based on booking id hash
-    const hash = booking.id ? booking.id.charCodeAt(0) + booking.id.charCodeAt(1) : 0;
-    return (hash % 4) + 1;
+    return booking.bay_number || 1;
   }
 
   function selectBay(bay, btn) {

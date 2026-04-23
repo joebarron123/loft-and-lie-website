@@ -1434,22 +1434,47 @@
 
     // ─── LOAD REAL AVAILABILITY ────────────
     async function loadBookingsForDate(date) {
-      const ds = date.toISOString().split('T')[0];
+      const d = date;
+      const ds = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
       const { data } = await sb.from('bookings')
-        .select('booking_time, duration_hours')
+        .select('booking_time, duration_hours, bay_number')
         .eq('booking_date', ds)
         .neq('status', 'cancelled');
       existingBookings = data || [];
     }
 
-    function isSlotBooked(timeStr) {
+    // Returns how many bays are occupied at a given time slot
+    function baysOccupiedAtSlot(timeStr) {
       const slotHour = parseTimeToHour(timeStr);
-      const overlapping = existingBookings.filter(b => {
+      return existingBookings.filter(b => {
         const bStart = parseTimeToHour(b.booking_time);
-        const bEnd   = bStart + (b.duration_hours || 1);
+        const bEnd   = bStart + Number(b.duration_hours || 1);
         return slotHour >= bStart && slotHour < bEnd;
+      }).length;
+    }
+
+    function isSlotBooked(timeStr) {
+      return baysOccupiedAtSlot(timeStr) >= 4;
+    }
+
+    // Find the first free bay (1–4) at a given time + duration
+    function findFreeBay(timeStr, durationHours) {
+      const slotStart = parseTimeToHour(timeStr);
+      const slotEnd   = slotStart + Number(durationHours);
+      // Which bays are occupied across the entire duration?
+      const takenBays = new Set();
+      existingBookings.forEach(b => {
+        const bStart = parseTimeToHour(b.booking_time);
+        const bEnd   = bStart + Number(b.duration_hours || 1);
+        // Overlaps if ranges intersect
+        if (slotStart < bEnd && slotEnd > bStart) {
+          if (b.bay_number) takenBays.add(b.bay_number);
+        }
       });
-      return overlapping.length >= 4; // only full when all 4 bays booked
+      for (let bay = 1; bay <= 4; bay++) {
+        if (!takenBays.has(bay)) return bay;
+      }
+      return null; // all full
     }
 
     // ─── SESSION SELECTION ─────────────────
@@ -1663,18 +1688,30 @@
       if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = 'Saving...'; }
 
       try {
-        // Round duration to nearest 0.5, store as numeric string to avoid int4 issues
+        // Round duration to nearest 0.5
         const durationVal = Math.round((booking.hours || 1) * 10) / 10;
+
+        // Find a free bay for this slot
+        const assignedBay = findFreeBay(booking.time, durationVal);
+        if (!assignedBay) {
+          alert('Sorry — all bays are now fully booked for this time slot. Please choose a different time.');
+          if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Confirm Booking →'; }
+          return;
+        }
+
+        const bookingDateStr = (() => {
+          const d = booking.date;
+          return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+        })();
+
         const payload = {
           guest_name:     (fname + ' ' + lname).trim(),
           guest_email:    email,
           session_type:   booking.label || 'Bay Session',
-          booking_date:   booking.date ? (() => {
-            const d = booking.date;
-            return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-          })() : null,
+          booking_date:   bookingDateStr,
           booking_time:   booking.time,
           duration_hours: durationVal,
+          bay_number:     assignedBay,
           players:        parseInt(booking.players) || 1,
           notes:          notes || null,
           total_amount:   parseInt(total),
