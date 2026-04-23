@@ -701,6 +701,16 @@
         </div>
       </div>
 
+<!-- EDIT BOOKING MODAL -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal-box" style="max-width:480px;">
+    <button class="modal-close" onclick="closeModal('edit-modal')">×</button>
+    <h3 class="modal-title">Edit Booking</h3>
+    <div id="edit-modal-body"></div>
+    <div class="modal-actions" id="edit-modal-actions"></div>
+  </div>
+</div>
+
       <!-- MEMBERS -->
       <div id="section-members" class="page-section">
         <div class="section-header">
@@ -1487,18 +1497,24 @@
   function renderBookings() { renderCalendar(); }
   function filterBookings() { renderCalendar(); }
 
+  let currentBookingId = null;
+
   function openBookingModal(id) {
     const b = allBookings.find(x => x.id === id);
     if (!b) return;
+    currentBookingId = id;
     const profile = allProfiles[b.user_id];
-    const name = profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : 'Unknown';
+    const isGuest = !b.user_id;
+    const name = isGuest ? (b.guest_name || 'Guest') : (profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : 'Unknown');
 
     document.getElementById('booking-modal-content').innerHTML = `
-      <div class="modal-row"><span class="modal-key">Member</span><span class="modal-val">${name}</span></div>
+      <div class="modal-row"><span class="modal-key">${isGuest ? 'Guest' : 'Member'}</span><span class="modal-val">${name}${isGuest ? ' <span style="font-size:0.65rem;background:rgba(212,139,42,0.15);color:#a86c10;padding:2px 6px;font-family:Montserrat,sans-serif;font-weight:700;letter-spacing:0.08em;">GUEST</span>' : ''}</span></div>
+      ${isGuest && b.guest_email ? `<div class="modal-row"><span class="modal-key">Email</span><span class="modal-val">${b.guest_email}</span></div>` : ''}
       <div class="modal-row"><span class="modal-key">Session</span><span class="modal-val">${b.session_type || '—'}</span></div>
       <div class="modal-row"><span class="modal-key">Date</span><span class="modal-val">${formatDate(b.booking_date)}</span></div>
       <div class="modal-row"><span class="modal-key">Time</span><span class="modal-val">${b.booking_time || '—'}</span></div>
-      <div class="modal-row"><span class="modal-key">Duration</span><span class="modal-val">${b.duration_hours || 1} hour(s)</span></div>
+      <div class="modal-row"><span class="modal-key">Duration</span><span class="modal-val">${b.duration_hours || 1} hr</span></div>
+      <div class="modal-row"><span class="modal-key">Bay</span><span class="modal-val">${b.bay_number ? 'Bay ' + b.bay_number : '—'}</span></div>
       <div class="modal-row"><span class="modal-key">Players</span><span class="modal-val">${b.players || 1}</span></div>
       <div class="modal-row"><span class="modal-key">Notes</span><span class="modal-val">${b.notes || 'None'}</span></div>
       <div class="modal-row"><span class="modal-key">Total</span><span class="modal-val">AED ${b.total_amount || 0}</span></div>
@@ -1507,22 +1523,161 @@
     `;
 
     document.getElementById('booking-modal-actions').innerHTML = `
-      ${b.status === 'confirmed' ? `<button class="btn-sm btn-amber" onclick="markComplete('${b.id}')">Mark Complete</button>` : ''}
-      ${b.status === 'confirmed' ? `<button class="btn-sm btn-red" onclick="cancelBooking('${b.id}')">Cancel Booking</button>` : ''}
+      ${b.status === 'confirmed' ? `<button class="btn-sm btn-green" onclick="openEditModal('${b.id}')">Edit Booking</button>` : ''}
+      ${b.status === 'confirmed' ? `<button class="btn-sm btn-amber" onclick="adminMarkComplete('${b.id}')">Mark Complete</button>` : ''}
+      ${b.status === 'confirmed' ? `<button class="btn-sm btn-red" onclick="adminCancelBooking('${b.id}')">Cancel Booking</button>` : ''}
       <button class="btn-sm" onclick="closeModal('booking-modal')" style="background:rgba(45,90,61,0.08);color:var(--green);border:none;">Close</button>
     `;
     document.getElementById('booking-modal').classList.add('open');
   }
 
-  async function cancelBooking(id) {
-    if (!confirm('Cancel this booking?')) return;
-    const { error } = await sb.from('bookings').update({ status: 'cancelled' }).eq('id', id);
-    if (!error) { showToast('Booking cancelled.'); closeModal('booking-modal'); await loadAllData(); }
+  async function adminCancelBooking(id) {
+    if (!confirm('Cancel this booking? This cannot be undone.')) return;
+    const res = await fetch(`https://pzkryujvwufexlraofjf.supabase.co/rest/v1/bookings?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': 'sb_publishable_F1sPAwfLOhjtwoYaXpLcZg_ov1-RhOO',
+        'Authorization': 'Bearer ' + (await sb.auth.getSession()).data.session?.access_token,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ status: 'cancelled' })
+    });
+    if (res.ok) {
+      showToast('Booking cancelled.');
+      closeModal('booking-modal');
+      await loadAllData();
+      renderCalendar();
+    } else {
+      const err = await res.text();
+      console.error('Cancel failed:', err);
+      showToast('Error cancelling booking. Check console.');
+    }
   }
 
-  async function markComplete(id) {
-    const { error } = await sb.from('bookings').update({ status: 'completed' }).eq('id', id);
-    if (!error) { showToast('Booking marked as complete.'); closeModal('booking-modal'); await loadAllData(); }
+  async function adminMarkComplete(id) {
+    const res = await fetch(`https://pzkryujvwufexlraofjf.supabase.co/rest/v1/bookings?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': 'sb_publishable_F1sPAwfLOhjtwoYaXpLcZg_ov1-RhOO',
+        'Authorization': 'Bearer ' + (await sb.auth.getSession()).data.session?.access_token,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ status: 'completed' })
+    });
+    if (res.ok) {
+      showToast('Booking marked as complete.');
+      closeModal('booking-modal');
+      await loadAllData();
+      renderCalendar();
+    } else {
+      showToast('Error updating booking.');
+    }
+  }
+
+  async function markComplete(id) { await adminMarkComplete(id); }
+  async function cancelBooking(id) { await adminCancelBooking(id); }
+
+  // ── EDIT BOOKING MODAL ─────────────────────────────────────────────────────
+  function openEditModal(id) {
+    const b = allBookings.find(x => x.id === id);
+    if (!b) return;
+    closeModal('booking-modal');
+
+    const TIME_SLOTS = ['08:00 AM','09:00 AM','10:00 AM','11:00 AM','12:00 PM',
+      '01:00 PM','02:00 PM','03:00 PM','04:00 PM','05:00 PM',
+      '06:00 PM','07:00 PM','08:00 PM','09:00 PM'];
+
+    const timeOptions = TIME_SLOTS.map(t =>
+      `<option value="${t}" ${b.booking_time === t ? 'selected' : ''}>${t}</option>`
+    ).join('');
+
+    const durOptions = [0.5,1,1.5,2,2.5,3,3.5,4].map(d =>
+      `<option value="${d}" ${parseFloat(b.duration_hours) === d ? 'selected' : ''}>${d} hr${d !== 1 ? 's' : ''}</option>`
+    ).join('');
+
+    const bayOptions = [1,2,3,4].map(n =>
+      `<option value="${n}" ${b.bay_number === n ? 'selected' : ''}>Bay ${n}</option>`
+    ).join('');
+
+    document.getElementById('edit-modal-body').innerHTML = `
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label">Date</label>
+        <input class="form-input" type="date" id="edit-date" value="${b.booking_date || ''}" />
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label">Time</label>
+        <select class="form-input" id="edit-time">${timeOptions}</select>
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label">Duration</label>
+        <select class="form-input" id="edit-duration">${durOptions}</select>
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label">Bay</label>
+        <select class="form-input" id="edit-bay">${bayOptions}</select>
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label">Players</label>
+        <input class="form-input" type="number" id="edit-players" min="1" max="4" value="${b.players || 1}" />
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label">Total (AED)</label>
+        <input class="form-input" type="number" id="edit-total" value="${b.total_amount || 0}" />
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label">Notes</label>
+        <textarea class="form-input" id="edit-notes" rows="2">${b.notes || ''}</textarea>
+      </div>
+      <div id="edit-error" style="color:var(--red);font-size:0.82rem;margin-top:8px;display:none;"></div>
+    `;
+
+    document.getElementById('edit-modal-actions').innerHTML = `
+      <button class="btn-sm btn-green" onclick="saveEditBooking('${b.id}')">Save Changes</button>
+      <button class="btn-sm" onclick="closeModal('edit-modal')" style="background:rgba(45,90,61,0.08);color:var(--green);border:none;">Cancel</button>
+    `;
+
+    document.getElementById('edit-modal').classList.add('open');
+  }
+
+  async function saveEditBooking(id) {
+    const updates = {
+      booking_date:   document.getElementById('edit-date').value,
+      booking_time:   document.getElementById('edit-time').value,
+      duration_hours: parseFloat(document.getElementById('edit-duration').value),
+      bay_number:     parseInt(document.getElementById('edit-bay').value),
+      players:        parseInt(document.getElementById('edit-players').value),
+      total_amount:   parseInt(document.getElementById('edit-total').value),
+      notes:          document.getElementById('edit-notes').value || null,
+    };
+
+    const session = await sb.auth.getSession();
+    const token = session.data.session?.access_token;
+
+    const res = await fetch(`https://pzkryujvwufexlraofjf.supabase.co/rest/v1/bookings?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': 'sb_publishable_F1sPAwfLOhjtwoYaXpLcZg_ov1-RhOO',
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(updates)
+    });
+
+    if (res.ok) {
+      showToast('Booking updated.');
+      closeModal('edit-modal');
+      await loadAllData();
+      renderCalendar();
+    } else {
+      const err = await res.text();
+      console.error('Update failed:', err);
+      const errEl = document.getElementById('edit-error');
+      errEl.style.display = 'block';
+      errEl.textContent = 'Failed to save. Please try again.';
+    }
   }
 
   // ── MEMBERS ────────────────────────────────
