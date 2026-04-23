@@ -863,6 +863,22 @@
     });
   });
 
+  // ── KEYBOARD ENTER SUPPORT ────────────────
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    const activeStep = document.querySelector('.booking-step.active');
+    if (document.getElementById('login-form').style.display !== 'none' && 
+        document.getElementById('auth-screen').style.display !== 'none') {
+      signIn();
+    } else if (document.getElementById('signup-form').style.display !== 'none' &&
+        document.getElementById('auth-screen').style.display !== 'none') {
+      signUp();
+    } else if (document.getElementById('reset-form').style.display !== 'none' &&
+        document.getElementById('auth-screen').style.display !== 'none') {
+      resetPassword();
+    }
+  });
+
   // ── AUTH TAB SWITCHING ─────────────────────
   function switchTab(tab) {
     document.getElementById('login-form').style.display = 'none';
@@ -939,7 +955,7 @@
       btn.disabled = false;
       btn.innerHTML = 'Create Account';
     } else {
-      // Insert profile record
+      // Insert/update profile record — update catches cases where trigger already created row
       if (data.user) {
         await sb.from('profiles').upsert({
           id: data.user.id,
@@ -949,7 +965,7 @@
           membership_type: membership,
           membership_status: 'active',
           created_at: new Date().toISOString()
-        });
+        }, { onConflict: 'id', ignoreDuplicates: false });
       }
       sucEl.style.display = 'block';
       sucEl.textContent = 'Account created! Check your email to confirm, then sign in.';
