@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Cream/sand background -->
+  <rect width="32" height="32" fill="#F7F3EB"/>
+  <!-- Green circle -->
+  <circle cx="16" cy="16" r="13" fill="none" stroke="#2D5A3D" stroke-width="2"/>
+  <!-- Ampersand -->
+  <text x="16" y="21" font-family="Georgia,serif" font-weight="700" font-size="17" fill="#2D5A3D" text-anchor="middle">&amp;</text>
+</svg>
