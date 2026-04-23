@@ -1651,21 +1651,51 @@
       const notes = document.getElementById('fnotes').value;
       const total = booking.price * booking.hours;
 
-      // Save to Supabase guest_bookings table (no auth required)
-      await sb.from('guest_bookings').insert({
-        guest_name:     (fname + ' ' + lname).trim(),
-        guest_email:    email,
-        session_type:   booking.label,
-        booking_date:   booking.date?.toISOString().split('T')[0],
-        booking_time:   booking.time,
-        duration_hours: booking.hours,
-        players:        booking.players,
-        notes,
-        total_amount:   total,
-        status:         'confirmed',
-        created_at:     new Date().toISOString()
-      });
+      const confirmBtn = document.querySelector('#step-4 .btn-primary:last-child');
+      if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = 'Saving...'; }
 
+      try {
+        const payload = {
+          guest_name:     (fname + ' ' + lname).trim(),
+          guest_email:    email,
+          session_type:   booking.label || 'Bay Session',
+          booking_date:   booking.date ? booking.date.toISOString().split('T')[0] : null,
+          booking_time:   booking.time,
+          duration_hours: booking.hours || 1,
+          players:        booking.players || 1,
+          notes:          notes || null,
+          total_amount:   total,
+          status:         'confirmed',
+          created_at:     new Date().toISOString()
+        };
+        // user_id is null for guest bookings — handled by updated RLS policy
+
+        const res = await fetch('https://pzkryujvwufexlraofjf.supabase.co/rest/v1/bookings', {
+          method: 'POST',
+          headers: {
+            'apikey':        'sb_publishable_F1sPAwfLOhjtwoYaXpLcZg_ov1-RhOO',
+            'Authorization': 'Bearer sb_publishable_F1sPAwfLOhjtwoYaXpLcZg_ov1-RhOO',
+            'Content-Type':  'application/json',
+            'Prefer':        'return=minimal'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error('Booking save failed:', res.status, errText);
+          alert('There was an issue saving your booking. Please try again or call us directly.');
+          if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Confirm Booking →'; }
+          return;
+        }
+      } catch(e) {
+        console.error('Booking fetch error:', e);
+        alert('There was a connection issue. Please try again.');
+        if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Confirm Booking →'; }
+        return;
+      }
+
+      // Success
       document.getElementById('confirm-email').textContent = email;
       document.querySelectorAll('.booking-step').forEach(s => s.classList.remove('active'));
       document.getElementById('step-5').classList.add('active');
