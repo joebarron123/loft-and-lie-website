@@ -519,6 +519,18 @@
   </div>
 </div>
 
+<!-- EDIT BOOKING MODAL -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Edit Booking</h3>
+      <button class="modal-close" onclick="closeModal('edit-modal')">×</button>
+    </div>
+    <div id="edit-modal-body"></div>
+    <div class="modal-actions" id="edit-modal-actions"></div>
+  </div>
+</div>
+
 <!-- ADMIN LOGIN -->
 <div id="admin-login">
   <div class="login-box">
@@ -700,18 +712,6 @@
           <div class="cal-month-grid" id="cal-month-grid"></div>
         </div>
       </div>
-
-<!-- EDIT BOOKING MODAL -->
-<div class="modal-overlay" id="edit-modal">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>Edit Booking</h3>
-      <button class="modal-close" onclick="closeModal('edit-modal')">×</button>
-    </div>
-    <div id="edit-modal-body"></div>
-    <div class="modal-actions" id="edit-modal-actions"></div>
-  </div>
-</div>
 
       <!-- MEMBERS -->
       <div id="section-members" class="page-section">
@@ -1582,10 +1582,13 @@
   async function cancelBooking(id) { await adminCancelBooking(id); }
 
   // ── EDIT BOOKING MODAL ─────────────────────────────────────────────────────
-  function openEditModal(id) {
+  async function openEditModal(id) {
     const b = allBookings.find(x => x.id === id);
     if (!b) return;
     closeModal('booking-modal');
+
+    // Brief delay to let booking modal animate out
+    await new Promise(r => setTimeout(r, 80));
 
     const TIME_SLOTS = ['08:00 AM','09:00 AM','10:00 AM','11:00 AM','12:00 PM',
       '01:00 PM','02:00 PM','03:00 PM','04:00 PM','05:00 PM',
