@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Loft & Lie — Member Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Source+Sans+3:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream:       #F7F3EB;
+      --green:       #2D5A3D;
+      --sage:        #A8C5A8;
+      --charcoal:    #3D3D3D;
+      --green-light: #3a7050;
+      --cream-dark:  #EDE8DC;
+      --red:         #C0392B;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--cream);
+      color: var(--charcoal);
+      font-family: 'Source Sans 3', sans-serif;
+      min-height: 100vh;
+    }
+
+    h1,h2,h3,h4 { font-family: 'Montserrat', sans-serif; color: var(--green); line-height: 1.15; }
+    p { line-height: 1.7; }
+
+    .label {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      font-size: 0.68rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--sage);
+    }
+
+    .btn-primary {
+      display: inline-block;
+      background: var(--green);
+      color: var(--cream);
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 14px 32px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.25s, transform 0.15s;
+      width: 100%;
+      text-align: center;
+    }
+    .btn-primary:hover { background: var(--green-light); transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .btn-outline {
+      display: inline-block;
+      border: 1.5px solid var(--green);
+      color: var(--green);
+      background: none;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 12px 28px;
+      cursor: pointer;
+      transition: background 0.25s, color 0.25s;
+    }
+    .btn-outline:hover { background: var(--green); color: var(--cream); }
+
+    .btn-danger {
+      background: none;
+      border: 1.5px solid var(--red);
+      color: var(--red);
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 8px 18px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .btn-danger:hover { background: var(--red); color: white; }
+
+    /* ── NAV ──────────────────────────────── */
+    nav {
+      background: rgba(247,243,235,0.97);
+      border-bottom: 1px solid rgba(45,90,61,0.1);
+      padding: 18px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+      backdrop-filter: blur(8px);
+    }
+    .nav-logo {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: 0.12em;
+      color: var(--green);
+      text-decoration: none;
+    }
+    .nav-right {
+      display: flex; align-items: center; gap: 20px;
+    }
+    .nav-user {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--charcoal);
+    }
+
+    /* ── AUTH SCREENS ─────────────────────── */
+    #auth-screen {
+      min-height: calc(100vh - 65px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+      background: var(--cream);
+    }
+
+    .auth-box {
+      width: 100%;
+      max-width: 440px;
+    }
+
+    .auth-tabs {
+      display: flex;
+      border-bottom: 2px solid rgba(45,90,61,0.12);
+      margin-bottom: 36px;
+    }
+    .auth-tab {
+      flex: 1;
+      padding: 12px;
+      text-align: center;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--sage);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .auth-tab.active { color: var(--green); border-bottom-color: var(--green); }
+
+    .auth-header { margin-bottom: 32px; }
+    .auth-header h2 { font-size: 1.8rem; margin-top: 8px; }
+
+    .form-group { margin-bottom: 18px; }
+    .form-label {
+      display: block;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 7px;
+    }
+    .form-input {
+      width: 100%;
+      border: 1.5px solid rgba(45,90,61,0.2);
+      background: white;
+      padding: 12px 14px;
+      font-family: 'Source Sans 3', sans-serif;
+      font-size: 0.95rem;
+      color: var(--charcoal);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus { border-color: var(--green); }
+    .form-input::placeholder { color: rgba(61,61,61,0.35); }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    .auth-divider {
+      text-align: center;
+      margin: 20px 0;
+      font-size: 0.82rem;
+      color: var(--sage);
+      position: relative;
+    }
+    .auth-divider::before, .auth-divider::after {
+      content: '';
+      position: absolute;
+      top: 50%; width: 40%;
+      height: 1px;
+      background: rgba(45,90,61,0.12);
+    }
+    .auth-divider::before { left: 0; }
+    .auth-divider::after { right: 0; }
+
+    .error-msg {
+      background: rgba(192,57,43,0.08);
+      border: 1px solid rgba(192,57,43,0.3);
+      color: var(--red);
+      padding: 12px 16px;
+      font-size: 0.88rem;
+      margin-bottom: 18px;
+      display: none;
+    }
+    .success-msg {
+      background: rgba(45,90,61,0.08);
+      border: 1px solid rgba(45,90,61,0.3);
+      color: var(--green);
+      padding: 12px 16px;
+      font-size: 0.88rem;
+      margin-bottom: 18px;
+      display: none;
+    }
+
+    /* ── DASHBOARD ────────────────────────── */
+    #dashboard-screen { display: none; }
+
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      min-height: calc(100vh - 65px);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background: var(--green);
+      padding: 40px 0;
+      position: sticky;
+      top: 65px;
+      height: calc(100vh - 65px);
+      overflow-y: auto;
+    }
+
+    .sidebar-profile {
+      padding: 0 28px 32px;
+      border-bottom: 1px solid rgba(168,197,168,0.2);
+      margin-bottom: 24px;
+    }
+    .sidebar-avatar {
+      width: 52px; height: 52px;
+      background: rgba(168,197,168,0.2);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--cream);
+      margin-bottom: 12px;
+    }
+    .sidebar-name {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      font-size: 0.88rem;
+      color: var(--cream);
+      margin-bottom: 4px;
+    }
+    .sidebar-membership {
+      font-size: 0.75rem;
+      color: var(--sage);
+      font-weight: 300;
+    }
+
+    .sidebar-nav { list-style: none; }
+    .sidebar-nav li a, .sidebar-nav li button {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 28px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(247,243,235,0.6);
+      text-decoration: none;
+      background: none;
+      border: none;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      transition: color 0.2s, background 0.2s;
+    }
+    .sidebar-nav li a:hover,
+    .sidebar-nav li button:hover { color: var(--cream); background: rgba(168,197,168,0.1); }
+    .sidebar-nav li a.active,
+    .sidebar-nav li button.active { color: var(--cream); background: rgba(168,197,168,0.15); border-left: 3px solid var(--sage); }
+
+    .sidebar-nav .nav-icon { font-size: 1rem; opacity: 0.7; }
+
+    /* Main content */
+    .main-content {
+      padding: 48px 56px;
+      background: var(--cream);
+    }
+
+    .page-section { display: none; }
+    .page-section.active { display: block; }
+
+    .section-title {
+      margin-bottom: 36px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid rgba(45,90,61,0.1);
+    }
+    .section-title h2 { font-size: 1.6rem; margin-top: 6px; }
+
+    /* Stats row */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+    .stat-card {
+      background: var(--cream-dark);
+      padding: 24px;
+      border: 1px solid rgba(45,90,61,0.08);
+    }
+    .stat-num {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 2rem;
+      color: var(--green);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .stat-label {
+      font-size: 0.8rem;
+      font-weight: 300;
+      color: var(--charcoal);
+    }
+
+    /* Membership card */
+    .membership-card {
+      background: var(--green);
+      padding: 36px;
+      margin-bottom: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+    .membership-card::after {
+      content: '⛳';
+      position: absolute;
+      right: 32px; top: 50%;
+      transform: translateY(-50%);
+      font-size: 5rem;
+      opacity: 0.08;
+    }
+    .membership-card .label { color: var(--sage); margin-bottom: 8px; }
+    .membership-card h3 { color: var(--cream); font-size: 1.4rem; margin-bottom: 4px; }
+    .membership-card p { color: rgba(247,243,235,0.7); font-size: 0.9rem; font-weight: 300; }
+    .membership-badge {
+      display: inline-block;
+      background: var(--sage);
+      color: var(--green);
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      margin-bottom: 16px;
+    }
+
+    /* Bookings table */
+    .bookings-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .bookings-table th {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--sage);
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid rgba(45,90,61,0.1);
+    }
+    .bookings-table td {
+      padding: 16px;
+      font-size: 0.9rem;
+      border-bottom: 1px solid rgba(45,90,61,0.06);
+      vertical-align: middle;
+    }
+    .bookings-table tr:last-child td { border-bottom: none; }
+    .bookings-table tr:hover td { background: rgba(45,90,61,0.02); }
+
+    .booking-status {
+      display: inline-block;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+    }
+    .booking-status.confirmed { background: rgba(45,90,61,0.1); color: var(--green); }
+    .booking-status.completed { background: rgba(168,197,168,0.2); color: #5a8a6a; }
+    .booking-status.cancelled { background: rgba(192,57,43,0.1); color: var(--red); }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--sage);
+    }
+    .empty-state p { font-size: 0.9rem; font-weight: 300; margin-top: 8px; }
+
+    /* Profile form */
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      max-width: 640px;
+    }
+    .profile-grid .full-width { grid-column: 1 / -1; }
+
+    /* Book a bay section */
+    .bay-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .bay-card {
+      background: var(--cream-dark);
+      border: 2px solid rgba(45,90,61,0.1);
+      padding: 24px;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+    .bay-card:hover { border-color: var(--sage); transform: translateY(-2px); }
+    .bay-card.selected { border-color: var(--green); }
+    .bay-card h4 { font-size: 1rem; margin-bottom: 4px; }
+    .bay-card p { font-size: 0.82rem; font-weight: 300; color: var(--charcoal); margin-bottom: 12px; }
+    .bay-price { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1.1rem; color: var(--green); }
+    .bay-price span { font-size: 0.72rem; font-weight: 400; color: var(--sage); }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 32px; right: 32px;
+      background: var(--green);
+      color: var(--cream);
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      padding: 16px 24px;
+      z-index: 999;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+
+    /* Loading */
+    .spinner {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 2px solid rgba(247,243,235,0.3);
+      border-top-color: var(--cream);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .dashboard-layout { grid-template-columns: 1fr; }
+      .sidebar { position: static; height: auto; padding: 20px 0; }
+      .main-content { padding: 32px 20px; }
+      .stats-row { grid-template-columns: 1fr 1fr; }
+      .profile-grid { grid-template-columns: 1fr; }
+      .bay-grid { grid-template-columns: 1fr; }
+      nav { padding: 16px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">LOFT &amp; LIE</a>
+  <div class="nav-right">
+    <span class="nav-user" id="nav-user-email"></span>
+    <button class="btn-outline" id="nav-signout-btn" onclick="signOut()" style="display:none; padding:8px 18px; font-size:0.7rem;">Sign Out</button>
+  </div>
+</nav>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-box">
+
+    <div class="auth-header">
+      <span class="label">Member Portal</span>
+      <h2>Welcome back.</h2>
+    </div>
+
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchTab('login')">Sign In</div>
+      <div class="auth-tab" onclick="switchTab('signup')">Create Account</div>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div id="login-form">
+      <div class="error-msg" id="login-error"></div>
+      <div class="success-msg" id="login-success"></div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input class="form-input" type="email" id="login-email" placeholder="your@email.com" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" id="login-password" placeholder="••••••••" />
+      </div>
+      <div style="text-align:right; margin-bottom:24px;">
+        <a href="#" onclick="switchTab('reset')" style="font-size:0.82rem; color:var(--sage); text-decoration:none;">Forgot password?</a>
+      </div>
+      <button class="btn-primary" id="login-btn" onclick="signIn()">Sign In</button>
+    </div>
+
+    <!-- SIGNUP FORM -->
+    <div id="signup-form" style="display:none;">
+      <div class="error-msg" id="signup-error"></div>
+      <div class="success-msg" id="signup-success"></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">First Name</label>
+          <input class="form-input" type="text" id="signup-first" placeholder="James" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name</label>
+          <input class="form-input" type="text" id="signup-last" placeholder="Smith" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input class="form-input" type="email" id="signup-email" placeholder="your@email.com" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone Number</label>
+        <input class="form-input" type="tel" id="signup-phone" placeholder="+971 50 000 0000" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" id="signup-password" placeholder="Min. 8 characters" />
+      </div>
+      <div class="form-group" style="margin-bottom:28px;">
+        <label class="form-label">Membership Type</label>
+        <select class="form-input" id="signup-membership">
+          <option value="pay_as_you_go">Pay As You Go</option>
+          <option value="monthly">Monthly Member — AED 999/mo</option>
+        </select>
+      </div>
+      <button class="btn-primary" id="signup-btn" onclick="signUp()">Create Account</button>
+    </div>
+
+    <!-- RESET FORM -->
+    <div id="reset-form" style="display:none;">
+      <div class="error-msg" id="reset-error"></div>
+      <div class="success-msg" id="reset-success"></div>
+      <p style="font-size:0.9rem; font-weight:300; margin-bottom:24px; color:var(--charcoal);">Enter your email and we'll send you a reset link.</p>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input class="form-input" type="email" id="reset-email" placeholder="your@email.com" />
+      </div>
+      <button class="btn-primary" id="reset-btn" onclick="resetPassword()" style="margin-bottom:16px;">Send Reset Link</button>
+      <button class="btn-outline" onclick="switchTab('login')" style="width:100%; text-align:center; padding:12px;">← Back to Sign In</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- DASHBOARD SCREEN -->
+<div id="dashboard-screen">
+  <div class="dashboard-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-profile">
+        <div class="sidebar-avatar" id="sidebar-avatar">JB</div>
+        <div class="sidebar-name" id="sidebar-name">Loading...</div>
+        <div class="sidebar-membership" id="sidebar-membership">Member</div>
+      </div>
+      <ul class="sidebar-nav">
+        <li><a href="#" class="active" onclick="showSection('overview', this)"><span class="nav-icon">📊</span> Overview</a></li>
+        <li><a href="#" onclick="showSection('bookings', this)"><span class="nav-icon">📅</span> My Bookings</a></li>
+        <li><a href="#" onclick="showSection('book', this)"><span class="nav-icon">⛳</span> Book a Bay</a></li>
+        <li><a href="#" onclick="showSection('membership', this)"><span class="nav-icon">🏆</span> Membership</a></li>
+        <li><a href="#" onclick="showSection('profile', this)"><span class="nav-icon">👤</span> Profile</a></li>
+        <li style="margin-top:40px; border-top:1px solid rgba(168,197,168,0.15); padding-top:16px;">
+          <button onclick="signOut()"><span class="nav-icon">🚪</span> Sign Out</button>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main-content">
+
+      <!-- OVERVIEW -->
+      <div id="section-overview" class="page-section active">
+        <div class="section-title">
+          <span class="label">Dashboard</span>
+          <h2 id="welcome-name">Good to see you.</h2>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-num" id="stat-total">0</div>
+            <div class="stat-label">Total Bookings</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num" id="stat-upcoming">0</div>
+            <div class="stat-label">Upcoming Sessions</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num" id="stat-hours">0</div>
+            <div class="stat-label">Hours Played</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num" id="stat-membership-stat">—</div>
+            <div class="stat-label">Membership Status</div>
+          </div>
+        </div>
+
+        <!-- Upcoming bookings preview -->
+        <div style="margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;">
+          <h3 style="font-size:1rem;">Upcoming Sessions</h3>
+          <a href="#" onclick="showSection('book', document.querySelector('.sidebar-nav a:nth-child(3)'))" style="font-family:'Montserrat',sans-serif; font-size:0.72rem; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--green); text-decoration:none;">+ Book a Bay</a>
+        </div>
+        <div id="overview-upcoming" style="background:var(--cream-dark); border:1px solid rgba(45,90,61,0.08);">
+          <div class="empty-state">
+            <div style="font-size:2rem; margin-bottom:8px;">⛳</div>
+            <p>No upcoming sessions. <a href="#" onclick="showSection('book', null)" style="color:var(--green);">Book your first bay →</a></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- MY BOOKINGS -->
+      <div id="section-bookings" class="page-section">
+        <div class="section-title">
+          <span class="label">History</span>
+          <h2>My Bookings</h2>
+        </div>
+        <div id="bookings-container" style="background:var(--cream-dark); border:1px solid rgba(45,90,61,0.08); overflow:auto;">
+          <div class="empty-state">
+            <div style="font-size:2rem; margin-bottom:8px;">📅</div>
+            <p>No bookings yet.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOOK A BAY -->
+      <div id="section-book" class="page-section">
+        <div class="section-title">
+          <span class="label">Reserve</span>
+          <h2>Book a Bay</h2>
+        </div>
+
+        <div class="bay-grid">
+          <div class="bay-card" onclick="selectBayType(this,'Bay Session',150,'bay')" data-type="bay">
+            <div style="font-size:1.6rem; margin-bottom:10px;">⛳</div>
+            <h4>Bay Session</h4>
+            <p>Trackman simulator, up to 4 players</p>
+            <div class="bay-price">AED 150 <span>/hr</span></div>
+          </div>
+          <div class="bay-card" onclick="selectBayType(this,'PGA Pro Lesson',350,'lesson')" data-type="lesson">
+            <div style="font-size:1.6rem; margin-bottom:10px;">🏌️</div>
+            <h4>PGA Pro Lesson</h4>
+            <p>1-on-1 with our certified PGA professional</p>
+            <div class="bay-price">AED 350 <span>/hr</span></div>
+          </div>
+        </div>
+
+        <div id="booking-form-area" style="display:none; max-width:540px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
+            <div class="form-group">
+              <label class="form-label">Date</label>
+              <input class="form-input" type="date" id="book-date" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Time</label>
+              <select class="form-input" id="book-time">
+                <option>08:00 AM</option><option>09:00 AM</option><option>10:00 AM</option>
+                <option>11:00 AM</option><option>12:00 PM</option><option>01:00 PM</option>
+                <option>02:00 PM</option><option>03:00 PM</option><option>04:00 PM</option>
+                <option>05:00 PM</option><option>06:00 PM</option><option>07:00 PM</option>
+                <option>08:00 PM</option><option>09:00 PM</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
+            <div class="form-group">
+              <label class="form-label">Duration</label>
+              <select class="form-input" id="book-duration">
+                <option value="1">1 Hour</option>
+                <option value="2">2 Hours</option>
+                <option value="3">3 Hours</option>
+              </select>
+            </div>
+            <div class="form-group" id="players-group">
+              <label class="form-label">Players</label>
+              <select class="form-input" id="book-players">
+                <option>1</option><option>2</option><option>3</option><option>4</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:28px;">
+            <label class="form-label">Special Requests <span style="opacity:0.5; font-weight:300;">(optional)</span></label>
+            <textarea class="form-input" id="book-notes" rows="2" placeholder="Any notes for us..." style="resize:vertical;"></textarea>
+          </div>
+          <div style="background:var(--cream-dark); border:1px solid rgba(45,90,61,0.1); padding:20px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-family:'Montserrat',sans-serif; font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.1em; color:var(--green);">Total Due on Arrival</span>
+            <span id="booking-total" style="font-family:'Montserrat',sans-serif; font-weight:700; font-size:1.5rem; color:var(--green);">AED 150</span>
+          </div>
+          <div class="error-msg" id="book-error"></div>
+          <button class="btn-primary" id="book-btn" onclick="submitBooking()">Confirm Booking</button>
+        </div>
+
+        <div id="book-success-msg" style="display:none; text-align:center; padding:60px 20px;">
+          <div style="width:64px;height:64px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;">
+            <svg width="28" height="28" fill="none" stroke="white" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <h3 style="margin-bottom:10px;">You're booked in.</h3>
+          <p style="font-weight:300; max-width:380px; margin:0 auto 32px;">Your session has been confirmed. See you at the studio!</p>
+          <button class="btn-outline" onclick="resetBookingForm()">Book Another Session</button>
+        </div>
+      </div>
+
+      <!-- MEMBERSHIP -->
+      <div id="section-membership" class="page-section">
+        <div class="section-title">
+          <span class="label">Your Plan</span>
+          <h2>Membership</h2>
+        </div>
+
+        <div class="membership-card" id="membership-card">
+          <div class="membership-badge" id="membership-badge">Pay As You Go</div>
+          <span class="label">Current Plan</span>
+          <h3 id="membership-title">Pay As You Go</h3>
+          <p id="membership-desc">Book bays and lessons at standard rates. No commitment required.</p>
+        </div>
+
+        <h3 style="font-size:1rem; margin-bottom:20px;">Upgrade Your Membership</h3>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; max-width:640px;">
+          <div style="background:var(--cream-dark); border:1px solid rgba(45,90,61,0.1); padding:28px;">
+            <div style="font-family:'Montserrat',sans-serif; font-size:0.65rem; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; color:var(--sage); margin-bottom:12px;">Pay As You Go</div>
+            <div style="font-family:'Montserrat',sans-serif; font-weight:700; font-size:1.8rem; color:var(--green); margin-bottom:4px;">AED 150</div>
+            <div style="font-size:0.82rem; color:var(--sage); margin-bottom:20px;">/hr per bay</div>
+            <ul style="list-style:none; margin-bottom:24px;">
+              <li style="font-size:0.85rem; padding:6px 0; border-bottom:1px solid rgba(45,90,61,0.06); display:flex; gap:8px;"><span style="color:var(--sage);">✓</span> Bay bookings at standard rate</li>
+              <li style="font-size:0.85rem; padding:6px 0; border-bottom:1px solid rgba(45,90,61,0.06); display:flex; gap:8px;"><span style="color:var(--sage);">✓</span> PGA lessons available</li>
+              <li style="font-size:0.85rem; padding:6px 0; display:flex; gap:8px;"><span style="color:var(--sage);">✓</span> No commitment</li>
+            </ul>
+            <button class="btn-outline" style="width:100%; text-align:center;" onclick="upgradeMembership('pay_as_you_go')">Current Plan</button>
+          </div>
+          <div style="background:var(--green); border:1px solid rgba(45,90,61,0.1); padding:28px; position:relative;">
+            <div style="position:absolute; top:16px; right:16px; background:var(--sage); color:var(--green); font-family:'Montserrat',sans-serif; font-size:0.6rem; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; padding:3px 10px;">Best Value</div>
+            <div style="font-family:'Montserrat',sans-serif; font-size:0.65rem; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; color:var(--sage); margin-bottom:12px;">Monthly Member</div>
+            <div style="font-family:'Montserrat',sans-serif; font-weight:700; font-size:1.8rem; color:var(--cream); margin-bottom:4px;">AED 999</div>
+            <div style="font-size:0.82rem; color:var(--sage); margin-bottom:20px;">/month</div>
+            <ul style="list-style:none; margin-bottom:24px;">
+              <li style="font-size:0.85rem; color:rgba(247,243,235,0.85); padding:6px 0; border-bottom:1px solid rgba(168,197,168,0.15); display:flex; gap:8px;"><span style="color:var(--sage);">✓</span> Unlimited off-peak bay access</li>
+              <li style="font-size:0.85rem; color:rgba(247,243,235,0.85); padding:6px 0; border-bottom:1px solid rgba(168,197,168,0.15); display:flex; gap:8px;"><span style="color:var(--sage);">✓</span> 10% peak hour discount</li>
+              <li style="font-size:0.85rem; color:rgba(247,243,235,0.85); padding:6px 0; border-bottom:1px solid rgba(168,197,168,0.15); display:flex; gap:8px;"><span style="color:var(--sage);">✓</span> Priority booking</li>
+              <li style="font-size:0.85rem; color:rgba(247,243,235,0.85); padding:6px 0; display:flex; gap:8px;"><span style="color:var(--sage);">✓</span> 2 guest passes/month</li>
+            </ul>
+            <button class="btn-primary" style="background:var(--cream); color:var(--green);" onclick="upgradeMembership('monthly')">Upgrade Now</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROFILE -->
+      <div id="section-profile" class="page-section">
+        <div class="section-title">
+          <span class="label">Account</span>
+          <h2>My Profile</h2>
+        </div>
+        <div class="error-msg" id="profile-error"></div>
+        <div class="success-msg" id="profile-success"></div>
+        <div class="profile-grid">
+          <div class="form-group">
+            <label class="form-label">First Name</label>
+            <input class="form-input" type="text" id="profile-first" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name</label>
+            <input class="form-input" type="text" id="profile-last" />
+          </div>
+          <div class="form-group full-width">
+            <label class="form-label">Email Address</label>
+            <input class="form-input" type="email" id="profile-email" disabled style="opacity:0.6;" />
+          </div>
+          <div class="form-group full-width">
+            <label class="form-label">Phone Number</label>
+            <input class="form-input" type="tel" id="profile-phone" />
+          </div>
+          <div class="form-group full-width">
+            <label class="form-label">New Password <span style="opacity:0.5; font-weight:300;">(leave blank to keep current)</span></label>
+            <input class="form-input" type="password" id="profile-password" placeholder="••••••••" />
+          </div>
+          <div class="full-width" style="margin-top:8px;">
+            <button class="btn-primary" style="width:auto; padding:14px 40px;" onclick="updateProfile()">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+  // ── SUPABASE INIT ──────────────────────────
+  const SUPABASE_URL = 'https://pzkryujvwufexlraofjf.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_F1sPAwfLOhjtwoYaXpLcZg_ov1-RhOO';
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ── STATE ──────────────────────────────────
+  let currentUser = null;
+  let currentProfile = null;
+  let selectedBayType = null;
+  let selectedBayPrice = 0;
+
+  // ── INIT ───────────────────────────────────
+  window.addEventListener('DOMContentLoaded', async () => {
+    // Set min date for booking to today
+    const today = new Date().toISOString().split('T')[0];
+    const dateInput = document.getElementById('book-date');
+    if (dateInput) { dateInput.min = today; dateInput.value = today; }
+
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      currentUser = session.user;
+      await loadDashboard();
+    }
+
+    sb.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        currentUser = session.user;
+        await loadDashboard();
+      } else if (event === 'SIGNED_OUT') {
+        currentUser = null;
+        showAuth();
+      }
+    });
+  });
+
+  // ── AUTH TAB SWITCHING ─────────────────────
+  function switchTab(tab) {
+    document.getElementById('login-form').style.display = 'none';
+    document.getElementById('signup-form').style.display = 'none';
+    document.getElementById('reset-form').style.display = 'none';
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+
+    if (tab === 'login') {
+      document.getElementById('login-form').style.display = 'block';
+      document.querySelectorAll('.auth-tab')[0].classList.add('active');
+    } else if (tab === 'signup') {
+      document.getElementById('signup-form').style.display = 'block';
+      document.querySelectorAll('.auth-tab')[1].classList.add('active');
+    } else if (tab === 'reset') {
+      document.getElementById('reset-form').style.display = 'block';
+    }
+  }
+
+  // ── SIGN IN ────────────────────────────────
+  async function signIn() {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const btn = document.getElementById('login-btn');
+    const errEl = document.getElementById('login-error');
+    const sucEl = document.getElementById('login-success');
+
+    errEl.style.display = 'none';
+    sucEl.style.display = 'none';
+
+    if (!email || !password) { showError(errEl, 'Please fill in all fields.'); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Signing in...';
+
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      showError(errEl, 'Invalid email or password. Please try again.');
+      btn.disabled = false;
+      btn.innerHTML = 'Sign In';
+    }
+  }
+
+  // ── SIGN UP ────────────────────────────────
+  async function signUp() {
+    const first = document.getElementById('signup-first').value.trim();
+    const last  = document.getElementById('signup-last').value.trim();
+    const email = document.getElementById('signup-email').value.trim();
+    const phone = document.getElementById('signup-phone').value.trim();
+    const pass  = document.getElementById('signup-password').value;
+    const membership = document.getElementById('signup-membership').value;
+    const btn   = document.getElementById('signup-btn');
+    const errEl = document.getElementById('signup-error');
+    const sucEl = document.getElementById('signup-success');
+
+    errEl.style.display = 'none';
+    sucEl.style.display = 'none';
+
+    if (!first || !last || !email || !pass) { showError(errEl, 'Please fill in all required fields.'); return; }
+    if (pass.length < 8) { showError(errEl, 'Password must be at least 8 characters.'); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Creating account...';
+
+    const { data, error } = await sb.auth.signUp({
+      email, password: pass,
+      options: {
+        data: { first_name: first, last_name: last, phone, membership_type: membership }
+      }
+    });
+
+    if (error) {
+      showError(errEl, error.message);
+      btn.disabled = false;
+      btn.innerHTML = 'Create Account';
+    } else {
+      // Insert profile record
+      if (data.user) {
+        await sb.from('profiles').upsert({
+          id: data.user.id,
+          first_name: first,
+          last_name: last,
+          phone,
+          membership_type: membership,
+          membership_status: 'active',
+          created_at: new Date().toISOString()
+        });
+      }
+      sucEl.style.display = 'block';
+      sucEl.textContent = 'Account created! Check your email to confirm, then sign in.';
+      btn.disabled = false;
+      btn.innerHTML = 'Create Account';
+    }
+  }
+
+  // ── RESET PASSWORD ─────────────────────────
+  async function resetPassword() {
+    const email = document.getElementById('reset-email').value.trim();
+    const btn = document.getElementById('reset-btn');
+    const errEl = document.getElementById('reset-error');
+    const sucEl = document.getElementById('reset-success');
+
+    errEl.style.display = 'none'; sucEl.style.display = 'none';
+    if (!email) { showError(errEl, 'Please enter your email address.'); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Sending...';
+
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/members.html'
+    });
+
+    if (error) {
+      showError(errEl, error.message);
+    } else {
+      sucEl.style.display = 'block';
+      sucEl.textContent = 'Reset link sent! Check your email.';
+    }
+    btn.disabled = false;
+    btn.innerHTML = 'Send Reset Link';
+  }
+
+  // ── SIGN OUT ───────────────────────────────
+  async function signOut() {
+    await sb.auth.signOut();
+    showToast('Signed out successfully.');
+  }
+
+  // ── LOAD DASHBOARD ─────────────────────────
+  async function loadDashboard() {
+    // Load profile
+    const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+    currentProfile = profile;
+
+    // Update sidebar
+    const first = profile?.first_name || currentUser.email.split('@')[0];
+    const last  = profile?.last_name || '';
+    const initials = (first[0] + (last[0] || '')).toUpperCase();
+
+    document.getElementById('sidebar-avatar').textContent = initials;
+    document.getElementById('sidebar-name').textContent = `${first} ${last}`.trim();
+    document.getElementById('sidebar-membership').textContent = membershipLabel(profile?.membership_type);
+    document.getElementById('welcome-name').textContent = `Good to see you, ${first}.`;
+    document.getElementById('nav-user-email').textContent = currentUser.email;
+    document.getElementById('nav-signout-btn').style.display = 'block';
+
+    // Fill profile form
+    document.getElementById('profile-first').value  = profile?.first_name || '';
+    document.getElementById('profile-last').value   = profile?.last_name  || '';
+    document.getElementById('profile-email').value  = currentUser.email;
+    document.getElementById('profile-phone').value  = profile?.phone || '';
+
+    // Membership section
+    const mtype = profile?.membership_type || 'pay_as_you_go';
+    document.getElementById('membership-badge').textContent = membershipLabel(mtype);
+    document.getElementById('membership-title').textContent = membershipLabel(mtype);
+    document.getElementById('membership-desc').textContent  = mtype === 'monthly'
+      ? 'Unlimited off-peak bay access, priority booking, and 2 guest passes per month.'
+      : 'Book bays and lessons at standard rates. No commitment required.';
+
+    // Load bookings
+    const { data: bookings } = await sb.from('bookings')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false });
+
+    renderStats(bookings || []);
+    renderBookings(bookings || []);
+    renderUpcoming(bookings || []);
+
+    // Show dashboard
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('dashboard-screen').style.display = 'block';
+  }
+
+  // ── RENDER STATS ───────────────────────────
+  function renderStats(bookings) {
+    const now = new Date();
+    const upcoming = bookings.filter(b => new Date(b.booking_date) >= now && b.status !== 'cancelled');
+    const hours    = bookings.filter(b => b.status !== 'cancelled').reduce((acc, b) => acc + (b.duration_hours || 1), 0);
+    const mtype    = currentProfile?.membership_type || 'pay_as_you_go';
+
+    document.getElementById('stat-total').textContent     = bookings.length;
+    document.getElementById('stat-upcoming').textContent  = upcoming.length;
+    document.getElementById('stat-hours').textContent     = hours;
+    document.getElementById('stat-membership-stat').textContent = mtype === 'monthly' ? 'Member' : 'PAYG';
+  }
+
+  // ── RENDER UPCOMING (OVERVIEW) ─────────────
+  function renderUpcoming(bookings) {
+    const now = new Date();
+    const upcoming = bookings
+      .filter(b => new Date(b.booking_date) >= now && b.status !== 'cancelled')
+      .slice(0, 3);
+
+    const container = document.getElementById('overview-upcoming');
+    if (!upcoming.length) {
+      container.innerHTML = `<div class="empty-state"><div style="font-size:2rem;margin-bottom:8px;">⛳</div><p>No upcoming sessions. <a href="#" onclick="showSection('book',null)" style="color:var(--green);">Book your first bay →</a></p></div>`;
+      return;
+    }
+    container.innerHTML = `<table class="bookings-table">
+      <thead><tr><th>Session</th><th>Date</th><th>Time</th><th>Duration</th><th>Status</th></tr></thead>
+      <tbody>${upcoming.map(b => `
+        <tr>
+          <td><strong>${b.session_type || 'Bay Session'}</strong></td>
+          <td>${formatDate(b.booking_date)}</td>
+          <td>${b.booking_time || '—'}</td>
+          <td>${b.duration_hours || 1}hr</td>
+          <td><span class="booking-status confirmed">Confirmed</span></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+  }
+
+  // ── RENDER BOOKINGS TABLE ──────────────────
+  function renderBookings(bookings) {
+    const container = document.getElementById('bookings-container');
+    if (!bookings.length) {
+      container.innerHTML = `<div class="empty-state"><div style="font-size:2rem;margin-bottom:8px;">📅</div><p>No bookings yet.</p></div>`;
+      return;
+    }
+    container.innerHTML = `<table class="bookings-table">
+      <thead><tr><th>Session</th><th>Date</th><th>Time</th><th>Duration</th><th>Players</th><th>Total</th><th>Status</th></tr></thead>
+      <tbody>${bookings.map(b => {
+        const statusClass = b.status === 'confirmed' ? 'confirmed' : b.status === 'completed' ? 'completed' : 'cancelled';
+        return `<tr>
+          <td><strong>${b.session_type || 'Bay Session'}</strong></td>
+          <td>${formatDate(b.booking_date)}</td>
+          <td>${b.booking_time || '—'}</td>
+          <td>${b.duration_hours || 1}hr</td>
+          <td>${b.players || 1}</td>
+          <td>AED ${b.total_amount || 150}</td>
+          <td><span class="booking-status ${statusClass}">${b.status || 'confirmed'}</span></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  }
+
+  // ── BOOK A BAY ─────────────────────────────
+  function selectBayType(el, label, price, type) {
+    document.querySelectorAll('.bay-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedBayType  = label;
+    selectedBayPrice = price;
+
+    const playersGroup = document.getElementById('players-group');
+    playersGroup.style.display = type === 'lesson' ? 'none' : 'block';
+
+    document.getElementById('booking-form-area').style.display = 'block';
+    document.getElementById('book-success-msg').style.display = 'none';
+    updateBookingTotal();
+  }
+
+  function updateBookingTotal() {
+    const hours = parseInt(document.getElementById('book-duration')?.value || 1);
+    const total = selectedBayPrice * hours;
+    const el = document.getElementById('booking-total');
+    if (el) el.textContent = `AED ${total}`;
+  }
+
+  document.addEventListener('change', e => {
+    if (e.target.id === 'book-duration') updateBookingTotal();
+  });
+
+  async function submitBooking() {
+    if (!selectedBayType) return;
+
+    const date     = document.getElementById('book-date').value;
+    const time     = document.getElementById('book-time').value;
+    const duration = parseInt(document.getElementById('book-duration').value);
+    const players  = document.getElementById('book-players').value;
+    const notes    = document.getElementById('book-notes').value;
+    const total    = selectedBayPrice * duration;
+    const btn      = document.getElementById('book-btn');
+    const errEl    = document.getElementById('book-error');
+
+    errEl.style.display = 'none';
+    if (!date) { showError(errEl, 'Please select a date.'); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Confirming...';
+
+    const { error } = await sb.from('bookings').insert({
+      user_id:        currentUser.id,
+      session_type:   selectedBayType,
+      booking_date:   date,
+      booking_time:   time,
+      duration_hours: duration,
+      players:        parseInt(players),
+      notes,
+      total_amount:   total,
+      status:         'confirmed',
+      created_at:     new Date().toISOString()
+    });
+
+    if (error) {
+      showError(errEl, 'Something went wrong. Please try again.');
+      btn.disabled = false;
+      btn.innerHTML = 'Confirm Booking';
+    } else {
+      document.getElementById('booking-form-area').style.display = 'none';
+      document.getElementById('book-success-msg').style.display = 'block';
+      document.querySelectorAll('.bay-card').forEach(c => c.classList.remove('selected'));
+      selectedBayType = null;
+      showToast('Booking confirmed! See you at the studio.');
+      await loadDashboard();
+      btn.disabled = false;
+      btn.innerHTML = 'Confirm Booking';
+    }
+  }
+
+  function resetBookingForm() {
+    document.getElementById('book-success-msg').style.display = 'none';
+    document.getElementById('booking-form-area').style.display = 'none';
+    document.querySelectorAll('.bay-card').forEach(c => c.classList.remove('selected'));
+    selectedBayType = null;
+  }
+
+  // ── UPDATE PROFILE ─────────────────────────
+  async function updateProfile() {
+    const first = document.getElementById('profile-first').value.trim();
+    const last  = document.getElementById('profile-last').value.trim();
+    const phone = document.getElementById('profile-phone').value.trim();
+    const pass  = document.getElementById('profile-password').value;
+    const errEl = document.getElementById('profile-error');
+    const sucEl = document.getElementById('profile-success');
+
+    errEl.style.display = 'none'; sucEl.style.display = 'none';
+
+    const { error: profileError } = await sb.from('profiles').upsert({
+      id: currentUser.id,
+      first_name: first,
+      last_name: last,
+      phone,
+      updated_at: new Date().toISOString()
+    });
+
+    if (pass) {
+      const { error: passError } = await sb.auth.updateUser({ password: pass });
+      if (passError) { showError(errEl, passError.message); return; }
+    }
+
+    if (profileError) {
+      showError(errEl, 'Failed to save changes.');
+    } else {
+      sucEl.style.display = 'block';
+      sucEl.textContent = 'Profile updated successfully.';
+      showToast('Profile saved.');
+      document.getElementById('profile-password').value = '';
+      await loadDashboard();
+    }
+  }
+
+  // ── UPGRADE MEMBERSHIP ─────────────────────
+  async function upgradeMembership(type) {
+    const { error } = await sb.from('profiles').update({
+      membership_type: type,
+      updated_at: new Date().toISOString()
+    }).eq('id', currentUser.id);
+
+    if (!error) {
+      showToast(type === 'monthly' ? 'Upgraded to Monthly Member!' : 'Switched to Pay As You Go.');
+      await loadDashboard();
+    }
+  }
+
+  // ── NAVIGATION ─────────────────────────────
+  function showSection(name, linkEl) {
+    document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+    document.getElementById('section-' + name).classList.add('active');
+    document.querySelectorAll('.sidebar-nav a, .sidebar-nav button').forEach(a => a.classList.remove('active'));
+    if (linkEl) linkEl.classList.add('active');
+    return false;
+  }
+
+  function showAuth() {
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('dashboard-screen').style.display = 'none';
+    document.getElementById('nav-user-email').textContent = '';
+    document.getElementById('nav-signout-btn').style.display = 'none';
+  }
+
+  // ── HELPERS ────────────────────────────────
+  function showError(el, msg) { el.textContent = msg; el.style.display = 'block'; }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3200);
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '—';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function membershipLabel(type) {
+    if (type === 'monthly') return 'Monthly Member';
+    return 'Pay As You Go';
+  }
+</script>
+</body>
+</html>
