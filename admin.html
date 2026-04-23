@@ -1601,36 +1601,32 @@
       `<option value="${n}" ${b.bay_number === n ? 'selected' : ''}>Bay ${n}</option>`
     ).join('');
 
+    const inlineInput = (tag, id, attrs, inner) =>
+      `<${tag} id="${id}" ${attrs} style="background:none;border:none;border-bottom:1.5px solid rgba(45,90,61,0.15);padding:4px 0;font-family:'Source Sans 3',sans-serif;font-size:0.9rem;color:var(--charcoal);outline:none;width:100%;text-align:right;">${inner || ''}</${tag}>`;
+
     document.getElementById('edit-modal-body').innerHTML = `
-      <div class="form-group" style="margin-bottom:14px;">
-        <label class="form-label">Date</label>
-        <input class="form-input" type="date" id="edit-date" value="${b.booking_date || ''}" />
+      <div class="modal-row"><span class="modal-key">Date</span>
+        <input type="date" id="edit-date" value="${b.booking_date || ''}" style="background:none;border:none;border-bottom:1.5px solid rgba(45,90,61,0.2);padding:4px 0;font-family:'Source Sans 3',sans-serif;font-size:0.9rem;color:var(--charcoal);outline:none;text-align:right;width:160px;cursor:pointer;" />
       </div>
-      <div class="form-group" style="margin-bottom:14px;">
-        <label class="form-label">Time</label>
-        <select class="form-input" id="edit-time">${timeOptions}</select>
+      <div class="modal-row"><span class="modal-key">Time</span>
+        <select id="edit-time" style="background:none;border:none;border-bottom:1.5px solid rgba(45,90,61,0.2);padding:4px 0;font-family:'Source Sans 3',sans-serif;font-size:0.9rem;color:var(--charcoal);outline:none;text-align:right;cursor:pointer;">${timeOptions}</select>
       </div>
-      <div class="form-group" style="margin-bottom:14px;">
-        <label class="form-label">Duration</label>
-        <select class="form-input" id="edit-duration">${durOptions}</select>
+      <div class="modal-row"><span class="modal-key">Duration</span>
+        <select id="edit-duration" style="background:none;border:none;border-bottom:1.5px solid rgba(45,90,61,0.2);padding:4px 0;font-family:'Source Sans 3',sans-serif;font-size:0.9rem;color:var(--charcoal);outline:none;text-align:right;cursor:pointer;">${durOptions}</select>
       </div>
-      <div class="form-group" style="margin-bottom:14px;">
-        <label class="form-label">Bay</label>
-        <select class="form-input" id="edit-bay">${bayOptions}</select>
+      <div class="modal-row"><span class="modal-key">Bay</span>
+        <select id="edit-bay" style="background:none;border:none;border-bottom:1.5px solid rgba(45,90,61,0.2);padding:4px 0;font-family:'Source Sans 3',sans-serif;font-size:0.9rem;color:var(--charcoal);outline:none;text-align:right;cursor:pointer;">${bayOptions}</select>
       </div>
-      <div class="form-group" style="margin-bottom:14px;">
-        <label class="form-label">Players</label>
-        <input class="form-input" type="number" id="edit-players" min="1" max="4" value="${b.players || 1}" />
+      <div class="modal-row"><span class="modal-key">Players</span>
+        <input type="number" id="edit-players" min="1" max="4" value="${b.players || 1}" style="background:none;border:none;border-bottom:1.5px solid rgba(45,90,61,0.2);padding:4px 0;font-family:'Source Sans 3',sans-serif;font-size:0.9rem;color:var(--charcoal);outline:none;text-align:right;width:60px;" />
       </div>
-      <div class="form-group" style="margin-bottom:14px;">
-        <label class="form-label">Total (AED)</label>
-        <input class="form-input" type="number" id="edit-total" value="${b.total_amount || 0}" />
+      <div class="modal-row"><span class="modal-key">Total (AED)</span>
+        <input type="number" id="edit-total" value="${b.total_amount || 0}" style="background:none;border:none;border-bottom:1.5px solid rgba(45,90,61,0.2);padding:4px 0;font-family:'Source Sans 3',sans-serif;font-size:0.9rem;color:var(--charcoal);outline:none;text-align:right;width:80px;" />
       </div>
-      <div class="form-group" style="margin-bottom:14px;">
-        <label class="form-label">Notes</label>
-        <textarea class="form-input" id="edit-notes" rows="2">${b.notes || ''}</textarea>
+      <div class="modal-row" style="align-items:flex-start;padding-top:12px;"><span class="modal-key">Notes</span>
+        <textarea id="edit-notes" rows="2" style="background:none;border:none;border-bottom:1.5px solid rgba(45,90,61,0.2);padding:4px 0;font-family:'Source Sans 3',sans-serif;font-size:0.9rem;color:var(--charcoal);outline:none;text-align:right;width:60%;resize:none;">${b.notes || ''}</textarea>
       </div>
-      <div id="edit-error" style="color:var(--red);font-size:0.82rem;margin-top:8px;display:none;"></div>
+      <div id="edit-error" style="color:var(--red);font-size:0.82rem;margin-top:8px;display:none;padding:8px;background:rgba(192,57,43,0.06);"></div>
     `;
 
     document.getElementById('edit-modal-actions').innerHTML = `
