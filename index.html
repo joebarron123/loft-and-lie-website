@@ -1363,11 +1363,19 @@
     // ─── LOAD LIVE PRICING ─────────────────
     async function loadLivePricing() {
       try {
-        const { data, error } = await sb.from('pricing').select('config').eq('id', 'loft_and_lie').single();
-        if (error) { console.warn('Pricing load error:', error); }
-        if (data?.config) {
-          livePrice = data.config;
-          applyPricingToCards(livePrice);
+        const url = 'https://pzkryujvwufexlraofjf.supabase.co/rest/v1/pricing?id=eq.loft_and_lie&select=config';
+        const res = await fetch(url, {
+          headers: {
+            'apikey': 'sb_publishable_F1sPAwfLOhjtwoYaXpLcZg_ov1-RhOO',
+            'Authorization': 'Bearer sb_publishable_F1sPAwfLOhjtwoYaXpLcZg_ov1-RhOO'
+          }
+        });
+        if (res.ok) {
+          const rows = await res.json();
+          if (rows.length && rows[0].config) {
+            livePrice = rows[0].config;
+            applyPricingToCards(livePrice);
+          }
         }
       } catch(e) {
         console.warn('Pricing fetch failed:', e);
@@ -1689,8 +1697,8 @@
 
     // ─── INIT ──────────────────────────────
     window.addEventListener('DOMContentLoaded', async () => {
-      await loadLivePricing();
-      renderCalendar();
+      renderCalendar(); // show calendar immediately
+      loadLivePricing(); // load pricing async — don't block
     });
 
     // Scroll reveal

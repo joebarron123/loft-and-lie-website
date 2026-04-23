@@ -1672,12 +1672,9 @@
     document.getElementById('p-offpeak-start').value   = p.offpeak_start;
     document.getElementById('p-offpeak-end').value     = p.offpeak_end;
     document.getElementById('p-membership-rate').value = p.membership_rate;
-    document.getElementById('p-membership-hours').value= p.membership_hours;
-    document.getElementById('p-membership-peak').value = p.membership_peak_uses;
     document.getElementById('p-guest-rate').value      = p.guest_rate;
     document.getElementById('p-lesson-rate').value     = p.lesson_rate;
     document.getElementById('p-lesson-duration').value = p.lesson_duration;
-    document.getElementById('p-corporate-rate').value  = p.corporate_rate;
 
     // Set day toggles
     document.querySelectorAll('#peak-days .day-toggle').forEach(btn => {
@@ -1732,12 +1729,9 @@
       offpeak_end:         document.getElementById('p-offpeak-end').value,
       offpeak_days:        getOffpeakDays(),
       membership_rate:     parseInt(document.getElementById('p-membership-rate').value),
-      membership_hours:    parseInt(document.getElementById('p-membership-hours').value),
-      membership_peak_uses:parseInt(document.getElementById('p-membership-peak').value),
       guest_rate:          parseInt(document.getElementById('p-guest-rate').value),
       lesson_rate:         parseInt(document.getElementById('p-lesson-rate').value),
       lesson_duration:     parseFloat(document.getElementById('p-lesson-duration').value),
-      corporate_rate:      parseInt(document.getElementById('p-corporate-rate').value),
       updated_at:          new Date().toISOString()
     };
 
