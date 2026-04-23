@@ -748,7 +748,7 @@
     .session-name { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 0.92rem; color: var(--green); margin-bottom: 6px; }
     .session-desc { font-size: 0.82rem; font-weight: 300; color: var(--charcoal); line-height: 1.5; margin-bottom: 16px; }
     .session-price { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1.2rem; color: var(--green); }
-    .session-price span { font-size: 0.75rem; font-weight: 400; color: var(--sage); }
+    .session-price span { font-size: 0.75rem; font-weight: 700; color: var(--sage); }
 
     .count-btn {
       width: 32px; height: 32px; border-radius: 50%;
@@ -1161,14 +1161,9 @@
               <label style="font-family:'Montserrat',sans-serif;font-size:0.72rem;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--green);display:block;margin-bottom:8px;">Duration</label>
               <div style="position:relative;">
                 <select id="duration-select" onchange="selectDurationDropdown(this.value)" style="width:100%;appearance:none;-webkit-appearance:none;border:1.5px solid rgba(45,90,61,0.2);background:var(--cream);padding:13px 40px 13px 16px;font-family:'Montserrat',sans-serif;font-size:0.82rem;font-weight:600;color:var(--charcoal);outline:none;cursor:pointer;letter-spacing:0.04em;">
-                  <option value="0.5">30 minutes</option>
-                  <option value="1" selected>1 hour</option>
-                  <option value="1.5">1 hour 30 minutes</option>
-                  <option value="2">2 hours</option>
-                  <option value="2.5">2 hours 30 minutes</option>
-                  <option value="3">3 hours</option>
-                  <option value="3.5">3 hours 30 minutes</option>
-                  <option value="4">4 hours</option>
+                  <option value="0.5">0.5 hrs — 30 minutes</option>
+                  <option value="1" selected>1.0 hr — 1 hour</option>
+                  <option value="1.5">1.5 hrs — 1 hour 30 minutes</option>
                 </select>
                 <div style="position:absolute;right:14px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--green);font-size:0.7rem;">▼</div>
               </div>
@@ -1281,8 +1276,14 @@
                 <div style="display:flex;align-items:center;gap:10px;"><svg width="15" height="15" fill="none" stroke="var(--sage)" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span style="font-size:0.82rem;color:var(--charcoal);">No deposit required</span></div>
               </div>
               <div style="display:flex;gap:14px;">
-                <button class="btn-outline" onclick="goToStep(3)">← Back</button>
-                <button class="btn-primary" onclick="confirmBooking()">Confirm Booking →</button>
+                <button class="btn-outline" onclick="goToStep(3)" style="display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:64px;padding:14px 34px;">
+                  <span>Back</span>
+                  <span style="font-size:1rem;">←</span>
+                </button>
+                <button class="btn-primary" onclick="confirmBooking()" style="display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:64px;padding:14px 34px;">
+                  <span>Confirm Booking</span>
+                  <span style="font-size:1rem;">→</span>
+                </button>
               </div>
             </div>
           </div>
@@ -1440,11 +1441,12 @@
 
     function isSlotBooked(timeStr) {
       const slotHour = parseTimeToHour(timeStr);
-      return existingBookings.some(b => {
+      const overlapping = existingBookings.filter(b => {
         const bStart = parseTimeToHour(b.booking_time);
         const bEnd   = bStart + (b.duration_hours || 1);
         return slotHour >= bStart && slotHour < bEnd;
       });
+      return overlapping.length >= 4; // only full when all 4 bays booked
     }
 
     // ─── SESSION SELECTION ─────────────────
@@ -1658,20 +1660,22 @@
       if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = 'Saving...'; }
 
       try {
+        // Round duration to nearest 0.5, store as numeric string to avoid int4 issues
+        const durationVal = Math.round((booking.hours || 1) * 10) / 10;
         const payload = {
           guest_name:     (fname + ' ' + lname).trim(),
           guest_email:    email,
           session_type:   booking.label || 'Bay Session',
           booking_date:   booking.date ? booking.date.toISOString().split('T')[0] : null,
           booking_time:   booking.time,
-          duration_hours: booking.hours || 1,
-          players:        booking.players || 1,
+          duration_hours: durationVal,
+          players:        parseInt(booking.players) || 1,
           notes:          notes || null,
-          total_amount:   total,
+          total_amount:   parseInt(total),
           status:         'confirmed',
           created_at:     new Date().toISOString()
         };
-        // user_id is null for guest bookings — handled by updated RLS policy
+        // user_id is null for guest bookings — handled by RLS policy
 
         const res = await fetch('https://pzkryujvwufexlraofjf.supabase.co/rest/v1/bookings', {
           method: 'POST',
