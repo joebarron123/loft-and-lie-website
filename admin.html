@@ -331,6 +331,33 @@
     }
     .bay-dot { width: 10px; height: 10px; border-radius: 50%; }
 
+    /* ── SCHEDULE GRID ───────────────────── */
+    .sched-grid {
+      display: grid;
+      min-width: 640px;
+      user-select: none;
+    }
+    .sched-hour-label {
+      font-family: 'Montserrat', sans-serif; font-size: 0.58rem; font-weight: 600;
+      letter-spacing: 0.06em; color: var(--sage); text-align: right;
+      padding-right: 8px; line-height: 28px; height: 28px;
+    }
+    .sched-day-header {
+      font-family: 'Montserrat', sans-serif; font-size: 0.62rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--charcoal);
+      text-align: center; padding: 8px 0 10px; border-bottom: 2px solid rgba(45,90,61,0.1);
+      margin-bottom: 2px;
+    }
+    .sched-cell {
+      height: 28px; margin: 1px; cursor: pointer; transition: opacity 0.1s;
+      border-radius: 2px;
+    }
+    .sched-cell:hover { opacity: 0.75; }
+    .sched-cell.peak    { background: var(--green); }
+    .sched-cell.offpeak { background: var(--sage); }
+    .sched-cell.closed  { background: rgba(61,61,61,0.06); border: 1px solid rgba(61,61,61,0.08); }
+    .brush-active { border: 2px solid var(--charcoal) !important; }
+
     /* ── PRICING ──────────────────────────── */
     .day-toggle {
       font-family: 'Montserrat', sans-serif; font-size: 0.65rem; font-weight: 600;
@@ -849,77 +876,58 @@
 
         <div id="pricing-error" style="background:rgba(192,57,43,0.08);border:1px solid rgba(192,57,43,0.3);color:var(--red);padding:12px 16px;font-size:0.88rem;margin-bottom:20px;display:none;"></div>
 
+        <!-- RATES -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:900px;margin-bottom:24px;">
+          <div style="background:white;border:1px solid rgba(45,90,61,0.08);padding:24px;display:flex;align-items:center;gap:16px;">
+            <div style="width:12px;height:12px;background:var(--green);border-radius:50%;flex-shrink:0;"></div>
+            <div style="flex:1;">
+              <label class="form-label" style="display:block;margin-bottom:6px;">Peak Rate (AED / hr)</label>
+              <input class="form-input" type="number" id="p-peak-rate" min="0" placeholder="230" style="width:100%;" />
+            </div>
+          </div>
+          <div style="background:white;border:1px solid rgba(45,90,61,0.08);padding:24px;display:flex;align-items:center;gap:16px;">
+            <div style="width:12px;height:12px;background:var(--sage);border-radius:50%;flex-shrink:0;"></div>
+            <div style="flex:1;">
+              <label class="form-label" style="display:block;margin-bottom:6px;">Off-Peak Rate (AED / hr)</label>
+              <input class="form-input" type="number" id="p-offpeak-rate" min="0" placeholder="150" style="width:100%;" />
+            </div>
+          </div>
+        </div>
+
+        <!-- VISUAL WEEKLY SCHEDULE -->
+        <div style="background:white;border:1px solid rgba(45,90,61,0.08);padding:28px;max-width:900px;margin-bottom:24px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+            <div>
+              <h3 style="font-size:1rem;margin-bottom:4px;">Weekly Schedule</h3>
+              <p style="font-size:0.8rem;font-weight:300;color:#888;">Click or drag to assign peak/off-peak hours. Unselected blocks are closed.</p>
+            </div>
+            <div style="display:flex;gap:12px;align-items:center;">
+              <div style="display:flex;align-items:center;gap:6px;font-size:0.72rem;font-family:'Montserrat',sans-serif;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">
+                <div id="brush-peak" onclick="setBrush('peak')" style="width:18px;height:18px;background:var(--green);cursor:pointer;border:2px solid var(--green);"></div>
+                <span style="color:var(--green);">Peak</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;font-size:0.72rem;font-family:'Montserrat',sans-serif;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">
+                <div id="brush-offpeak" onclick="setBrush('offpeak')" style="width:18px;height:18px;background:var(--sage);cursor:pointer;border:2px solid transparent;"></div>
+                <span style="color:var(--sage);">Off-Peak</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;font-size:0.72rem;font-family:'Montserrat',sans-serif;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">
+                <div id="brush-closed" onclick="setBrush('closed')" style="width:18px;height:18px;background:rgba(61,61,61,0.08);cursor:pointer;border:2px solid transparent;"></div>
+                <span style="color:#aaa;">Closed</span>
+              </div>
+              <button onclick="clearSchedule()" style="font-family:'Montserrat',sans-serif;font-size:0.65rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;background:none;border:1px solid rgba(45,90,61,0.2);color:var(--sage);padding:5px 12px;cursor:pointer;">Clear All</button>
+            </div>
+          </div>
+          <div id="schedule-grid" style="overflow-x:auto;">
+            <!-- rendered by JS -->
+          </div>
+        </div>
+
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:900px;">
-
-          <!-- PAYG PEAK -->
-          <div style="background:white;border:1px solid rgba(45,90,61,0.08);padding:32px;">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-              <div style="width:10px;height:10px;background:var(--green);border-radius:50%;"></div>
-              <h3 style="font-size:1rem;">Peak Hours</h3>
-            </div>
-            <p style="font-size:0.82rem;font-weight:300;color:#888;margin-bottom:24px;">Higher demand windows — weekends and evenings.</p>
-            <div class="form-group">
-              <label class="form-label">Peak Rate (AED / hr)</label>
-              <input class="form-input" type="number" id="p-peak-rate" min="0" placeholder="230" />
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-              <div class="form-group">
-                <label class="form-label">Start Time</label>
-                <input class="form-input" type="time" id="p-peak-start" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">End Time</label>
-                <input class="form-input" type="time" id="p-peak-end" />
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Peak Days</label>
-              <div id="peak-days" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;">
-                <button class="day-toggle" data-day="0" onclick="toggleDay(this)">Sun</button>
-                <button class="day-toggle" data-day="1" onclick="toggleDay(this)">Mon</button>
-                <button class="day-toggle" data-day="2" onclick="toggleDay(this)">Tue</button>
-                <button class="day-toggle" data-day="3" onclick="toggleDay(this)">Wed</button>
-                <button class="day-toggle" data-day="4" onclick="toggleDay(this)">Thu</button>
-                <button class="day-toggle active" data-day="5" onclick="toggleDay(this)">Fri</button>
-                <button class="day-toggle active" data-day="6" onclick="toggleDay(this)">Sat</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- PAYG OFF-PEAK -->
-          <div style="background:white;border:1px solid rgba(45,90,61,0.08);padding:32px;">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-              <div style="width:10px;height:10px;background:var(--sage);border-radius:50%;"></div>
-              <h3 style="font-size:1rem;">Off-Peak Hours</h3>
-            </div>
-            <p style="font-size:0.82rem;font-weight:300;color:#888;margin-bottom:24px;">Lower demand windows — weekday mornings and afternoons.</p>
-            <div class="form-group">
-              <label class="form-label">Off-Peak Rate (AED / hr)</label>
-              <input class="form-input" type="number" id="p-offpeak-rate" min="0" placeholder="150" />
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-              <div class="form-group">
-                <label class="form-label">Start Time</label>
-                <input class="form-input" type="time" id="p-offpeak-start" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">End Time</label>
-                <input class="form-input" type="time" id="p-offpeak-end" />
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Off-Peak Days</label>
-              <div id="offpeak-days" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;">
-                <button class="day-toggle active" data-day="0" onclick="toggleDay(this)">Sun</button>
-                <button class="day-toggle active" data-day="1" onclick="toggleDay(this)">Mon</button>
-                <button class="day-toggle active" data-day="2" onclick="toggleDay(this)">Tue</button>
-                <button class="day-toggle active" data-day="3" onclick="toggleDay(this)">Wed</button>
-                <button class="day-toggle active" data-day="4" onclick="toggleDay(this)">Thu</button>
-                <button class="day-toggle" data-day="5" onclick="toggleDay(this)">Fri</button>
-                <button class="day-toggle" data-day="6" onclick="toggleDay(this)">Sat</button>
-              </div>
-            </div>
-          </div>
+          <!-- hidden inputs to keep savePricing compatible -->
+          <input type="hidden" id="p-peak-start" value="17:00" />
+          <input type="hidden" id="p-peak-end" value="23:00" />
+          <input type="hidden" id="p-offpeak-start" value="08:00" />
+          <input type="hidden" id="p-offpeak-end" value="17:00" />
 
           <!-- MEMBERSHIP -->
           <div style="background:white;border:1px solid rgba(45,90,61,0.08);padding:32px;">
@@ -1914,107 +1922,174 @@
   });
   // ── PRICING ────────────────────────────────
   const PRICING_DEFAULTS = {
-    peak_rate: 230, peak_start: '17:00', peak_end: '23:00',
-    peak_days: [5, 6],
-    offpeak_rate: 150, offpeak_start: '08:00', offpeak_end: '17:00',
-    offpeak_days: [0, 1, 2, 3, 4],
-    membership_rate: 750, membership_hours: 8, membership_peak_uses: 3,
-    guest_rate: 50, lesson_rate: 350, lesson_duration: 1, corporate_rate: 800
+    peak_rate: 230, offpeak_rate: 150,
+    membership_rate: 750, guest_rate: 50,
+    lesson_rate: 350, lesson_duration: 1,
+    schedule: {}
   };
 
   let currentPricing = { ...PRICING_DEFAULTS };
+  let scheduleState  = {};
+  let currentBrush   = 'peak';
+  let isDragging     = false;
+
+  const SCHED_DAYS  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const SCHED_HOURS = Array.from({length:16}, (_,i) => i + 7); // 7am–10pm
+
+  function setBrush(type) {
+    currentBrush = type;
+    ['peak','offpeak','closed'].forEach(t => {
+      const el = document.getElementById('brush-' + t);
+      if (el) el.classList.toggle('brush-active', t === type);
+    });
+  }
+
+  function schedKey(day, hour) { return `${day}-${hour}`; }
+
+  function buildScheduleGrid() {
+    const grid = document.getElementById('schedule-grid');
+    if (!grid) return;
+    let html = `<div class="sched-grid" style="grid-template-columns:44px repeat(${SCHED_DAYS.length},1fr);">`;
+    // Header
+    html += '<div></div>';
+    SCHED_DAYS.forEach(d => { html += `<div class="sched-day-header">${d}</div>`; });
+    // Rows
+    SCHED_HOURS.forEach(h => {
+      const label = h === 12 ? '12 PM' : h < 12 ? `${h} AM` : `${h-12} PM`;
+      html += `<div class="sched-hour-label">${label}</div>`;
+      SCHED_DAYS.forEach(d => {
+        const key   = schedKey(d, h);
+        const state = scheduleState[key] || 'closed';
+        html += `<div class="sched-cell ${state}" data-key="${key}"
+          onmousedown="startDrag(event,'${key}')"
+          onmouseenter="continueDrag(event,'${key}')"
+          onmouseup="stopDrag()"></div>`;
+      });
+    });
+    html += '</div>';
+    grid.innerHTML = html;
+    document.addEventListener('mouseup', stopDrag);
+  }
+
+  function startDrag(e, key) { e.preventDefault(); isDragging = true; paintCell(key); }
+  function continueDrag(e, key) { if (!isDragging) return; paintCell(key); }
+  function stopDrag() { isDragging = false; }
+
+  function paintCell(key) {
+    scheduleState[key] = currentBrush;
+    const el = document.querySelector(`.sched-cell[data-key="${key}"]`);
+    if (el) el.className = `sched-cell ${currentBrush}`;
+    updatePricingPreview();
+  }
+
+  function clearSchedule() {
+    if (!confirm('Clear all schedule blocks?')) return;
+    scheduleState = {};
+    buildScheduleGrid();
+  }
+
+  function deriveScheduleConfig() {
+    const peakDays = new Set(), offpeakDays = new Set();
+    const peakHours = new Set(), offpeakHours = new Set();
+    Object.entries(scheduleState).forEach(([key, val]) => {
+      const [day, hourStr] = key.split('-');
+      const dayIdx = { Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6, Sun:0 }[day];
+      const h = parseInt(hourStr);
+      if (val === 'peak')    { peakDays.add(dayIdx);    peakHours.add(h); }
+      if (val === 'offpeak') { offpeakDays.add(dayIdx); offpeakHours.add(h); }
+    });
+    const sortedPH = [...peakHours].sort((a,b)=>a-b);
+    const sortedOH = [...offpeakHours].sort((a,b)=>a-b);
+    const pad = n => String(n).padStart(2,'0');
+    return {
+      peak_days:    [...peakDays],
+      offpeak_days: [...offpeakDays],
+      peak_start:   sortedPH.length ? `${pad(sortedPH[0])}:00`                       : '17:00',
+      peak_end:     sortedPH.length ? `${pad(sortedPH[sortedPH.length-1]+1)}:00`     : '23:00',
+      offpeak_start:sortedOH.length ? `${pad(sortedOH[0])}:00`                       : '08:00',
+      offpeak_end:  sortedOH.length ? `${pad(sortedOH[sortedOH.length-1]+1)}:00`     : '17:00',
+    };
+  }
+
+  function populateScheduleFromConfig(config) {
+    scheduleState = config.schedule || {};
+    if (!Object.keys(scheduleState).length && config.peak_days) {
+      const peakStart    = parseInt((config.peak_start    || '17:00').split(':')[0]);
+      const peakEnd      = parseInt((config.peak_end      || '23:00').split(':')[0]);
+      const offpeakStart = parseInt((config.offpeak_start || '08:00').split(':')[0]);
+      const offpeakEnd   = parseInt((config.offpeak_end   || '17:00').split(':')[0]);
+      SCHED_DAYS.forEach(d => {
+        const dayIdx = { Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6, Sun:0 }[d];
+        const isPeak    = (config.peak_days    || []).includes(dayIdx);
+        const isOffpeak = (config.offpeak_days || []).includes(dayIdx);
+        SCHED_HOURS.forEach(h => {
+          const key = schedKey(d, h);
+          if      (isPeak    && h >= peakStart    && h < peakEnd)    scheduleState[key] = 'peak';
+          else if (isOffpeak && h >= offpeakStart && h < offpeakEnd) scheduleState[key] = 'offpeak';
+          else scheduleState[key] = 'closed';
+        });
+      });
+    }
+  }
 
   async function loadPricing() {
     const { data } = await sb.from('pricing').select('*').eq('id', 'loft_and_lie').single();
-    if (data?.config) {
-      currentPricing = { ...PRICING_DEFAULTS, ...data.config };
-    }
+    if (data?.config) currentPricing = { ...PRICING_DEFAULTS, ...data.config };
     populatePricingForm();
   }
 
   function populatePricingForm() {
     const p = currentPricing;
     document.getElementById('p-peak-rate').value       = p.peak_rate;
-    document.getElementById('p-peak-start').value      = p.peak_start;
-    document.getElementById('p-peak-end').value        = p.peak_end;
     document.getElementById('p-offpeak-rate').value    = p.offpeak_rate;
-    document.getElementById('p-offpeak-start').value   = p.offpeak_start;
-    document.getElementById('p-offpeak-end').value     = p.offpeak_end;
     document.getElementById('p-membership-rate').value = p.membership_rate;
     document.getElementById('p-guest-rate').value      = p.guest_rate;
     document.getElementById('p-lesson-rate').value     = p.lesson_rate;
     document.getElementById('p-lesson-duration').value = p.lesson_duration;
-
-    // Set day toggles
-    document.querySelectorAll('#peak-days .day-toggle').forEach(btn => {
-      btn.classList.toggle('active', p.peak_days.includes(parseInt(btn.dataset.day)));
-    });
-    document.querySelectorAll('#offpeak-days .day-toggle').forEach(btn => {
-      btn.classList.toggle('active', p.offpeak_days.includes(parseInt(btn.dataset.day)));
-    });
-
-    updatePricingPreview();
-  }
-
-  function toggleDay(btn) {
-    btn.classList.toggle('active');
+    populateScheduleFromConfig(p);
+    buildScheduleGrid();
+    setBrush('peak');
     updatePricingPreview();
   }
 
   function updatePricingPreview() {
-    const peakRate     = document.getElementById('p-peak-rate')?.value || PRICING_DEFAULTS.peak_rate;
-    const offpeakRate  = document.getElementById('p-offpeak-rate')?.value || PRICING_DEFAULTS.offpeak_rate;
-    const memberRate   = document.getElementById('p-membership-rate')?.value || PRICING_DEFAULTS.membership_rate;
-    const lessonRate   = document.getElementById('p-lesson-rate')?.value || PRICING_DEFAULTS.lesson_rate;
-
-    const prevPeak       = document.getElementById('prev-peak');
-    const prevOffpeak    = document.getElementById('prev-offpeak');
-    const prevMembership = document.getElementById('prev-membership');
-    const prevLesson     = document.getElementById('prev-lesson');
-
-    if (prevPeak)       prevPeak.textContent       = 'AED ' + peakRate;
-    if (prevOffpeak)    prevOffpeak.textContent     = 'AED ' + offpeakRate;
-    if (prevMembership) prevMembership.textContent  = 'AED ' + memberRate;
-    if (prevLesson)     prevLesson.textContent      = 'AED ' + lessonRate;
+    const v = id => document.getElementById(id)?.value || '';
+    const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = 'AED ' + val; };
+    el('prev-peak', v('p-peak-rate') || PRICING_DEFAULTS.peak_rate);
+    el('prev-offpeak', v('p-offpeak-rate') || PRICING_DEFAULTS.offpeak_rate);
+    el('prev-membership', v('p-membership-rate') || PRICING_DEFAULTS.membership_rate);
+    el('prev-lesson', v('p-lesson-rate') || PRICING_DEFAULTS.lesson_rate);
   }
 
-  // Live preview on input
   document.addEventListener('input', e => {
-    const pricingInputs = ['p-peak-rate','p-offpeak-rate','p-membership-rate','p-lesson-rate'];
-    if (pricingInputs.includes(e.target.id)) updatePricingPreview();
+    if (['p-peak-rate','p-offpeak-rate','p-membership-rate','p-lesson-rate'].includes(e.target.id))
+      updatePricingPreview();
   });
 
   async function savePricing() {
-    const getPeakDays    = () => [...document.querySelectorAll('#peak-days .day-toggle.active')].map(b => parseInt(b.dataset.day));
-    const getOffpeakDays = () => [...document.querySelectorAll('#offpeak-days .day-toggle.active')].map(b => parseInt(b.dataset.day));
-
+    const derived = deriveScheduleConfig();
     const config = {
-      peak_rate:           parseInt(document.getElementById('p-peak-rate').value),
-      peak_start:          document.getElementById('p-peak-start').value,
-      peak_end:            document.getElementById('p-peak-end').value,
-      peak_days:           getPeakDays(),
-      offpeak_rate:        parseInt(document.getElementById('p-offpeak-rate').value),
-      offpeak_start:       document.getElementById('p-offpeak-start').value,
-      offpeak_end:         document.getElementById('p-offpeak-end').value,
-      offpeak_days:        getOffpeakDays(),
-      membership_rate:     parseInt(document.getElementById('p-membership-rate').value),
-      guest_rate:          parseInt(document.getElementById('p-guest-rate').value),
-      lesson_rate:         parseInt(document.getElementById('p-lesson-rate').value),
-      lesson_duration:     parseFloat(document.getElementById('p-lesson-duration').value),
-      updated_at:          new Date().toISOString()
+      peak_rate:       parseInt(document.getElementById('p-peak-rate').value),
+      offpeak_rate:    parseInt(document.getElementById('p-offpeak-rate').value),
+      membership_rate: parseInt(document.getElementById('p-membership-rate').value),
+      guest_rate:      parseInt(document.getElementById('p-guest-rate').value),
+      lesson_rate:     parseInt(document.getElementById('p-lesson-rate').value),
+      lesson_duration: parseFloat(document.getElementById('p-lesson-duration').value),
+      schedule:        scheduleState,
+      ...derived,
+      updated_at:      new Date().toISOString()
     };
-
     const { error } = await sb.from('pricing').upsert({ id: 'loft_and_lie', config });
-
     if (error) {
       showToast('Error saving pricing. Please try again.');
-      console.error(error);
     } else {
       currentPricing = config;
       showToast('Pricing saved and published live.');
-      document.getElementById('pricing-save-status').textContent = 'Last saved: ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      document.getElementById('pricing-save-status').textContent =
+        'Last saved: ' + new Date().toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
     }
   }
+
   // ── ADMIN MANAGEMENT ───────────────────────────────
   let adminList = [];
 
