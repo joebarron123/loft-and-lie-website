@@ -677,31 +677,42 @@
           <h2>Book a Bay</h2>
         </div>
 
-        <div class="bay-grid">
-          <div class="bay-card" id="bay-card-bay" onclick="selectBayType(this,'Bay Session',window.livePrice?.peak_rate||150,'bay')" data-type="bay">
-            <div style="font-size:1.6rem; margin-bottom:10px;">⛳</div>
-            <h4>Bay Session</h4>
-            <p>Trackman simulator, up to 4 players</p>
-            <div class="bay-price" id="bay-price-display">AED 150 <span>/hr</span></div>
-            <div id="bay-offpeak-note" style="font-size:0.72rem;color:var(--sage);margin-top:4px;display:none;"></div>
-          </div>
-          <div class="bay-card" id="bay-card-lesson" onclick="selectBayType(this,'PGA Pro Lesson',window.livePrice?.lesson_rate||350,'lesson')" data-type="lesson">
-            <div style="font-size:1.6rem; margin-bottom:10px;">🏌️</div>
-            <h4>PGA Pro Lesson</h4>
-            <p>1-on-1 with our certified PGA professional</p>
-            <div class="bay-price" id="lesson-price-display">AED 350 <span>/hr</span></div>
+        <!-- Member benefit banner -->
+        <div id="member-benefit-banner" style="display:none;background:var(--green);padding:16px 24px;margin-bottom:28px;display:flex;align-items:center;gap:14px;">
+          <span style="font-size:1.2rem;">⭐</span>
+          <div>
+            <div style="font-family:'Montserrat',sans-serif;font-size:0.72rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--sage);">Monthly Member Benefit</div>
+            <div style="font-size:0.88rem;color:var(--cream);font-weight:300;margin-top:2px;">Bay sessions are included in your membership — no charge. Max 2 hours per session, 1 booking per day.</div>
           </div>
         </div>
 
-        <div id="booking-form-area" style="display:none; max-width:540px;">
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
+        <!-- Session type -->
+        <p style="font-family:'Montserrat',sans-serif;font-size:0.75rem;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--green);margin-bottom:14px;">Session Type</p>
+        <div class="bay-grid" style="margin-bottom:28px;">
+          <div class="bay-card" id="bay-card-bay" onclick="selectBayType(this,'Bay Session','bay')" data-type="bay">
+            <div style="font-size:1.6rem;margin-bottom:10px;">⛳</div>
+            <h4>Bay Session</h4>
+            <p>Trackman simulator, up to 4 players</p>
+            <div class="bay-price" id="bay-price-display">AED 150<span>–230/hr</span></div>
+            <div id="member-free-tag" style="display:none;font-family:'Montserrat',sans-serif;font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--sage);margin-top:4px;">Included in membership</div>
+          </div>
+          <div class="bay-card" id="bay-card-lesson" onclick="selectBayType(this,'PGA Pro Lesson','lesson')" data-type="lesson">
+            <div style="font-size:1.6rem;margin-bottom:10px;">🏌️</div>
+            <h4>PGA Pro Lesson</h4>
+            <p>1-on-1 with our certified PGA professional</p>
+            <div class="bay-price" id="lesson-price-display">AED 350<span>/hr</span></div>
+          </div>
+        </div>
+
+        <div id="booking-form-area" style="display:none;max-width:540px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
             <div class="form-group">
               <label class="form-label">Date</label>
-              <input class="form-input" type="date" id="book-date" />
+              <input class="form-input" type="date" id="book-date" onchange="checkDailyLimit()" />
             </div>
             <div class="form-group">
               <label class="form-label">Time</label>
-              <select class="form-input" id="book-time">
+              <select class="form-input" id="book-time" onchange="updateBookingTotal()">
                 <option>08:00 AM</option><option>09:00 AM</option><option>10:00 AM</option>
                 <option>11:00 AM</option><option>12:00 PM</option><option>01:00 PM</option>
                 <option>02:00 PM</option><option>03:00 PM</option><option>04:00 PM</option>
@@ -710,13 +721,16 @@
               </select>
             </div>
           </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
             <div class="form-group">
               <label class="form-label">Duration</label>
-              <select class="form-input" id="book-duration">
-                <option value="1">1 Hour</option>
-                <option value="2">2 Hours</option>
-                <option value="3">3 Hours</option>
+              <select class="form-input" id="book-duration" onchange="updateBookingTotal()">
+                <option value="0.5">0.5 hours</option>
+                <option value="1" selected>1.0 hour</option>
+                <option value="1.5">1.5 hours</option>
+                <option value="2">2.0 hours</option>
+                <option value="2.5" class="payg-only">2.5 hours</option>
+                <option value="3" class="payg-only">3.0 hours</option>
               </select>
             </div>
             <div class="form-group" id="players-group">
@@ -727,23 +741,35 @@
             </div>
           </div>
           <div class="form-group" style="margin-bottom:28px;">
-            <label class="form-label">Special Requests <span style="opacity:0.5; font-weight:300;">(optional)</span></label>
+            <label class="form-label">Special Requests <span style="opacity:0.5;font-weight:300;">(optional)</span></label>
             <textarea class="form-input" id="book-notes" rows="2" placeholder="Any notes for us..." style="resize:vertical;"></textarea>
           </div>
-          <div style="background:var(--cream-dark); border:1px solid rgba(45,90,61,0.1); padding:20px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-family:'Montserrat',sans-serif; font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.1em; color:var(--green);">Total Due on Arrival</span>
-            <span id="booking-total" style="font-family:'Montserrat',sans-serif; font-weight:700; font-size:1.5rem; color:var(--green);">AED 150</span>
+
+          <!-- Daily limit warning -->
+          <div id="daily-limit-warning" style="display:none;background:rgba(212,139,42,0.1);border:1px solid rgba(212,139,42,0.3);padding:14px 18px;margin-bottom:16px;">
+            <p style="font-size:0.85rem;color:#a86c10;font-weight:400;">⚠️ You already have a booking on this date. Members are limited to 1 bay session per day.</p>
+          </div>
+
+          <!-- Rate info strip -->
+          <div id="rate-info-strip" style="display:none;background:var(--cream-dark);border:1px solid rgba(45,90,61,0.1);padding:14px 18px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+            <span id="rate-strip-label" style="font-size:0.82rem;font-weight:300;color:var(--charcoal);"></span>
+            <span id="rate-strip-badge" style="font-family:'Montserrat',sans-serif;font-size:0.62rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:3px 10px;"></span>
+          </div>
+
+          <div style="background:var(--cream-dark);border:1px solid rgba(45,90,61,0.1);padding:20px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-family:'Montserrat',sans-serif;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--green);">Total Due on Arrival</span>
+            <span id="booking-total" style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:1.5rem;color:var(--green);">AED 0</span>
           </div>
           <div class="error-msg" id="book-error"></div>
           <button class="btn-primary" id="book-btn" onclick="submitBooking()">Confirm Booking</button>
         </div>
 
-        <div id="book-success-msg" style="display:none; text-align:center; padding:60px 20px;">
+        <div id="book-success-msg" style="display:none;text-align:center;padding:60px 20px;">
           <div style="width:64px;height:64px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;">
             <svg width="28" height="28" fill="none" stroke="white" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
           <h3 style="margin-bottom:10px;">You're booked in.</h3>
-          <p style="font-weight:300; max-width:380px; margin:0 auto 32px;">Your session has been confirmed. See you at the studio!</p>
+          <p style="font-weight:300;max-width:380px;margin:0 auto 32px;">Your session has been confirmed. See you at the studio!</p>
           <button class="btn-outline" onclick="resetBookingForm()">Book Another Session</button>
         </div>
       </div>
@@ -762,31 +788,68 @@
           <p id="membership-desc">Book bays and lessons at standard rates. No commitment required.</p>
         </div>
 
-        <h3 style="font-size:1rem; margin-bottom:20px;">Upgrade Your Membership</h3>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; max-width:640px;">
-          <div style="background:var(--cream-dark); border:1px solid rgba(45,90,61,0.1); padding:28px;">
-            <div style="font-family:'Montserrat',sans-serif; font-size:0.65rem; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; color:var(--sage); margin-bottom:12px;">Pay As You Go</div>
-            <div style="font-family:'Montserrat',sans-serif; font-weight:700; font-size:1.8rem; color:var(--green); margin-bottom:4px;">AED 150</div>
-            <div style="font-size:0.82rem; color:var(--sage); margin-bottom:20px;">/hr per bay</div>
-            <ul style="list-style:none; margin-bottom:24px;">
-              <li style="font-size:0.85rem; padding:6px 0; border-bottom:1px solid rgba(45,90,61,0.06); display:flex; gap:8px;"><span style="color:var(--sage);">✓</span> Bay bookings at standard rate</li>
-              <li style="font-size:0.85rem; padding:6px 0; border-bottom:1px solid rgba(45,90,61,0.06); display:flex; gap:8px;"><span style="color:var(--sage);">✓</span> PGA lessons available</li>
-              <li style="font-size:0.85rem; padding:6px 0; display:flex; gap:8px;"><span style="color:var(--sage);">✓</span> No commitment</li>
-            </ul>
-            <button class="btn-outline" style="width:100%; text-align:center;" onclick="upgradeMembership('pay_as_you_go')">Current Plan</button>
+        <!-- PAYG: upgrade prompt -->
+        <div id="upgrade-section">
+          <h3 style="font-size:1rem;margin-bottom:20px;">Upgrade Your Membership</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:640px;">
+            <div style="background:var(--cream-dark);border:1px solid rgba(45,90,61,0.1);padding:28px;">
+              <div style="font-family:'Montserrat',sans-serif;font-size:0.65rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--sage);margin-bottom:12px;">Pay As You Go</div>
+              <div style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:1.8rem;color:var(--green);margin-bottom:4px;" id="mem-payg-rate">AED 150</div>
+              <div style="font-size:0.82rem;color:var(--sage);margin-bottom:20px;">/hr per bay (off-peak)</div>
+              <ul style="list-style:none;margin-bottom:24px;">
+                <li style="font-size:0.85rem;padding:6px 0;border-bottom:1px solid rgba(45,90,61,0.06);display:flex;gap:8px;"><span style="color:var(--sage);">✓</span> Bay bookings at standard rate</li>
+                <li style="font-size:0.85rem;padding:6px 0;border-bottom:1px solid rgba(45,90,61,0.06);display:flex;gap:8px;"><span style="color:var(--sage);">✓</span> PGA lessons available</li>
+                <li style="font-size:0.85rem;padding:6px 0;display:flex;gap:8px;"><span style="color:var(--sage);">✓</span> No commitment</li>
+              </ul>
+              <button class="btn-outline" style="width:100%;text-align:center;opacity:0.5;cursor:default;">Current Plan</button>
+            </div>
+            <div style="background:var(--green);border:1px solid rgba(45,90,61,0.1);padding:28px;position:relative;">
+              <div style="position:absolute;top:16px;right:16px;background:var(--sage);color:var(--green);font-family:'Montserrat',sans-serif;font-size:0.6rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;padding:3px 10px;">Best Value</div>
+              <div style="font-family:'Montserrat',sans-serif;font-size:0.65rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--sage);margin-bottom:12px;">Monthly Member</div>
+              <div style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:1.8rem;color:var(--cream);margin-bottom:4px;" id="mem-monthly-rate">AED 750</div>
+              <div style="font-size:0.82rem;color:var(--sage);margin-bottom:20px;">/month</div>
+              <ul style="list-style:none;margin-bottom:24px;">
+                <li style="font-size:0.85rem;color:rgba(247,243,235,0.85);padding:6px 0;border-bottom:1px solid rgba(168,197,168,0.15);display:flex;gap:8px;"><span style="color:var(--sage);">✓</span> Bay sessions included (up to 2hrs/day)</li>
+                <li style="font-size:0.85rem;color:rgba(247,243,235,0.85);padding:6px 0;border-bottom:1px solid rgba(168,197,168,0.15);display:flex;gap:8px;"><span style="color:var(--sage);">✓</span> 10% discount on peak hours</li>
+                <li style="font-size:0.85rem;color:rgba(247,243,235,0.85);padding:6px 0;border-bottom:1px solid rgba(168,197,168,0.15);display:flex;gap:8px;"><span style="color:var(--sage);">✓</span> Priority booking</li>
+                <li style="font-size:0.85rem;color:rgba(247,243,235,0.85);padding:6px 0;display:flex;gap:8px;"><span style="color:var(--sage);">✓</span> 2 guest passes/month</li>
+              </ul>
+              <button class="btn-primary" style="background:var(--cream);color:var(--green);width:100%;text-align:center;" onclick="upgradeMembership('monthly')">Upgrade Now</button>
+            </div>
           </div>
-          <div style="background:var(--green); border:1px solid rgba(45,90,61,0.1); padding:28px; position:relative;">
-            <div style="position:absolute; top:16px; right:16px; background:var(--sage); color:var(--green); font-family:'Montserrat',sans-serif; font-size:0.6rem; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; padding:3px 10px;">Best Value</div>
-            <div style="font-family:'Montserrat',sans-serif; font-size:0.65rem; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; color:var(--sage); margin-bottom:12px;">Monthly Member</div>
-            <div style="font-family:'Montserrat',sans-serif; font-weight:700; font-size:1.8rem; color:var(--cream); margin-bottom:4px;">AED 999</div>
-            <div style="font-size:0.82rem; color:var(--sage); margin-bottom:20px;">/month</div>
-            <ul style="list-style:none; margin-bottom:24px;">
-              <li style="font-size:0.85rem; color:rgba(247,243,235,0.85); padding:6px 0; border-bottom:1px solid rgba(168,197,168,0.15); display:flex; gap:8px;"><span style="color:var(--sage);">✓</span> Unlimited off-peak bay access</li>
-              <li style="font-size:0.85rem; color:rgba(247,243,235,0.85); padding:6px 0; border-bottom:1px solid rgba(168,197,168,0.15); display:flex; gap:8px;"><span style="color:var(--sage);">✓</span> 10% peak hour discount</li>
-              <li style="font-size:0.85rem; color:rgba(247,243,235,0.85); padding:6px 0; border-bottom:1px solid rgba(168,197,168,0.15); display:flex; gap:8px;"><span style="color:var(--sage);">✓</span> Priority booking</li>
-              <li style="font-size:0.85rem; color:rgba(247,243,235,0.85); padding:6px 0; display:flex; gap:8px;"><span style="color:var(--sage);">✓</span> 2 guest passes/month</li>
-            </ul>
-            <button class="btn-primary" style="background:var(--cream); color:var(--green);" onclick="upgradeMembership('monthly')">Upgrade Now</button>
+        </div>
+
+        <!-- Monthly member details -->
+        <div id="member-details-section" style="display:none;max-width:600px;">
+          <h3 style="font-size:1rem;margin-bottom:20px;">Your Membership</h3>
+          <div style="background:white;border:1px solid rgba(45,90,61,0.08);">
+            <div style="padding:18px 28px;border-bottom:1px solid rgba(45,90,61,0.06);display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-family:'Montserrat',sans-serif;font-size:0.7rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--sage);">Status</span>
+              <span style="font-family:'Montserrat',sans-serif;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;background:var(--green);color:var(--cream);padding:4px 12px;">Active</span>
+            </div>
+            <div style="padding:18px 28px;border-bottom:1px solid rgba(45,90,61,0.06);display:flex;justify-content:space-between;">
+              <span style="font-family:'Montserrat',sans-serif;font-size:0.7rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--sage);">Plan</span>
+              <span style="font-size:0.9rem;color:var(--charcoal);">Monthly Member</span>
+            </div>
+            <div style="padding:18px 28px;border-bottom:1px solid rgba(45,90,61,0.06);display:flex;justify-content:space-between;">
+              <span style="font-family:'Montserrat',sans-serif;font-size:0.7rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--sage);">Monthly Fee</span>
+              <span id="mem-detail-fee" style="font-size:0.9rem;color:var(--charcoal);">AED 750/month</span>
+            </div>
+            <div style="padding:18px 28px;border-bottom:1px solid rgba(45,90,61,0.06);display:flex;justify-content:space-between;">
+              <span style="font-family:'Montserrat',sans-serif;font-size:0.7rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--sage);">Member Since</span>
+              <span id="mem-detail-started" style="font-size:0.9rem;color:var(--charcoal);">—</span>
+            </div>
+            <div style="padding:18px 28px;border-bottom:1px solid rgba(45,90,61,0.06);display:flex;justify-content:space-between;">
+              <span style="font-family:'Montserrat',sans-serif;font-size:0.7rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--sage);">Next Renewal</span>
+              <span id="mem-detail-expires" style="font-size:0.9rem;color:var(--charcoal);">—</span>
+            </div>
+            <div style="padding:18px 28px;display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-family:'Montserrat',sans-serif;font-size:0.7rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--sage);">Booking Allowance</span>
+              <span style="font-size:0.9rem;color:var(--charcoal);">1 session/day · max 2hrs · included</span>
+            </div>
+          </div>
+          <div style="margin-top:16px;">
+            <button class="btn-outline" style="font-size:0.72rem;padding:10px 24px;color:var(--red);border-color:rgba(192,57,43,0.3);" onclick="upgradeMembership('pay_as_you_go')">Cancel Membership</button>
           </div>
         </div>
       </div>
@@ -913,44 +976,28 @@
   }
 
   function applyLivePricing(p) {
-    // Update bay session card
-    const now = new Date();
-    const hour = now.getHours();
-    const day = now.getDay();
-    const isPeak = p.peak_days?.includes(day) &&
-      hour >= parseInt(p.peak_start?.split(':')[0] || 17) &&
-      hour < parseInt(p.peak_end?.split(':')[0] || 23);
-
-    const bayRate = isPeak ? p.peak_rate : p.offpeak_rate;
+    // Bay session card: show range
     const bayDisplay = document.getElementById('bay-price-display');
-    const offpeakNote = document.getElementById('bay-offpeak-note');
-    const bayCard = document.getElementById('bay-card-bay');
+    if (bayDisplay) bayDisplay.innerHTML = `AED ${p.offpeak_rate||150}<span>–${p.peak_rate||230}/hr</span>`;
+
     const lessonDisplay = document.getElementById('lesson-price-display');
+    if (lessonDisplay) lessonDisplay.innerHTML = `AED ${p.lesson_rate||350}<span>/hr</span>`;
 
-    if (bayDisplay) bayDisplay.innerHTML = `AED ${bayRate} <span>/hr</span>`;
-    if (offpeakNote) {
-      offpeakNote.style.display = 'block';
-      offpeakNote.textContent = isPeak
-        ? `Peak rate · Off-peak: AED ${p.offpeak_rate}/hr`
-        : `Off-peak rate · Peak: AED ${p.peak_rate}/hr`;
-    }
-    if (bayCard) {
-      bayCard.setAttribute('onclick', `selectBayType(this,'Bay Session',${bayRate},'bay')`);
-    }
-    if (lessonDisplay && p.lesson_rate) {
-      lessonDisplay.innerHTML = `AED ${p.lesson_rate} <span>/hr</span>`;
-      const lessonCard = document.getElementById('bay-card-lesson');
-      if (lessonCard) lessonCard.setAttribute('onclick', `selectBayType(this,'PGA Pro Lesson',${p.lesson_rate},'lesson')`);
-    }
+    // Membership upgrade section prices
+    const paygEl = document.getElementById('mem-payg-rate');
+    if (paygEl) paygEl.textContent = `AED ${p.offpeak_rate||150}`;
+    const monthlyEl = document.getElementById('mem-monthly-rate');
+    if (monthlyEl) monthlyEl.textContent = `AED ${p.membership_rate||750}`;
+    const feeEl = document.getElementById('mem-detail-fee');
+    if (feeEl) feeEl.textContent = `AED ${p.membership_rate||750}/month`;
 
-    // Update membership section
-    const mTitle = document.getElementById('membership-title');
-    const mDesc  = document.getElementById('membership-desc');
-    if (mDesc && p.membership_rate) {
+    // Update membership description
+    const mDesc = document.getElementById('membership-desc');
+    if (mDesc) {
       const mtype = currentProfile?.membership_type || 'pay_as_you_go';
-      if (mtype === 'pay_as_you_go') {
-        mDesc.textContent = `Book bays at AED ${p.offpeak_rate}/hr off-peak and AED ${p.peak_rate}/hr peak. No commitment required.`;
-      }
+      mDesc.textContent = mtype === 'monthly'
+        ? `Monthly membership · AED ${p.membership_rate||750}/month · Bay sessions included.`
+        : `Book bays at AED ${p.offpeak_rate||150}/hr off-peak and AED ${p.peak_rate||230}/hr peak. No commitment required.`;
     }
   }
 
@@ -1093,11 +1140,39 @@
 
     // Membership section
     const mtype = profile?.membership_type || 'pay_as_you_go';
+    const isMember = mtype === 'monthly';
     document.getElementById('membership-badge').textContent = membershipLabel(mtype);
     document.getElementById('membership-title').textContent = membershipLabel(mtype);
-    document.getElementById('membership-desc').textContent  = mtype === 'monthly'
-      ? 'Unlimited off-peak bay access, priority booking, and 2 guest passes per month.'
+    document.getElementById('membership-desc').textContent  = isMember
+      ? `Monthly membership · Bay sessions included.`
       : 'Book bays and lessons at standard rates. No commitment required.';
+
+    // Show/hide upgrade vs member details
+    const upgradeEl = document.getElementById('upgrade-section');
+    const detailsEl = document.getElementById('member-details-section');
+    if (upgradeEl) upgradeEl.style.display = isMember ? 'none' : 'block';
+    if (detailsEl) detailsEl.style.display = isMember ? 'block' : 'none';
+
+    // Populate member details
+    if (isMember) {
+      const fmtDate = d => d ? new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}) : '—';
+      const startedEl  = document.getElementById('mem-detail-started');
+      const expiresEl  = document.getElementById('mem-detail-expires');
+      if (startedEl)  startedEl.textContent  = fmtDate(profile?.membership_started_at || profile?.created_at);
+      if (expiresEl)  expiresEl.textContent  = fmtDate(profile?.membership_expires_at);
+      if (window.livePrice) {
+        const feeEl = document.getElementById('mem-detail-fee');
+        if (feeEl) feeEl.textContent = `AED ${window.livePrice.membership_rate||750}/month`;
+      }
+    }
+
+    // Member banner on booking page
+    const banner = document.getElementById('member-benefit-banner');
+    if (banner) banner.style.display = isMember ? 'flex' : 'none';
+
+    // Member free tag on bay card
+    const freeTag = document.getElementById('member-free-tag');
+    if (freeTag) freeTag.style.display = isMember ? 'block' : 'none';
 
     // Load bookings
     const { data: bookings } = await sb.from('bookings')
@@ -1178,45 +1253,130 @@
   }
 
   // ── BOOK A BAY ─────────────────────────────
-  function selectBayType(el, label, price, type) {
+  function selectBayType(el, label, type) {
     document.querySelectorAll('.bay-card').forEach(c => c.classList.remove('selected'));
     el.classList.add('selected');
-    selectedBayType  = label;
-    selectedBayPrice = price;
+    selectedBayType = label;
+    selectedBayTypeKey = type;
 
+    const isMember = currentProfile?.membership_type === 'monthly';
     const playersGroup = document.getElementById('players-group');
     playersGroup.style.display = type === 'lesson' ? 'none' : 'block';
+
+    // Members: limit duration to 2hrs for bay sessions
+    const durSelect = document.getElementById('book-duration');
+    if (isMember && type === 'bay') {
+      [...durSelect.options].forEach(o => {
+        o.disabled = parseFloat(o.value) > 2;
+      });
+      if (parseFloat(durSelect.value) > 2) durSelect.value = '2';
+    } else {
+      [...durSelect.options].forEach(o => o.disabled = false);
+    }
 
     document.getElementById('booking-form-area').style.display = 'block';
     document.getElementById('book-success-msg').style.display = 'none';
     updateBookingTotal();
   }
 
+  function parseTimeHour(t) {
+    if (!t) return 9;
+    const [time, period] = t.split(' ');
+    let [h] = time.split(':').map(Number);
+    if (period === 'PM' && h !== 12) h += 12;
+    if (period === 'AM' && h === 12) h = 0;
+    return h;
+  }
+
   function updateBookingTotal() {
-    const hours = parseInt(document.getElementById('book-duration')?.value || 1);
-    const total = selectedBayPrice * hours;
-    const el = document.getElementById('booking-total');
-    if (el) el.textContent = `AED ${total}`;
+    const isMember = currentProfile?.membership_type === 'monthly';
+    const typeKey  = selectedBayTypeKey;
+    const hours    = parseFloat(document.getElementById('book-duration')?.value || 1);
+    const p        = window.livePrice;
+    const time     = document.getElementById('book-time')?.value;
+
+    let rate = 0;
+    let rateLabel = '';
+
+    if (isMember && typeKey === 'bay') {
+      rate = 0;
+      rateLabel = 'Included in your membership';
+    } else if (typeKey === 'lesson') {
+      rate = p?.lesson_rate || 350;
+      rateLabel = `AED ${rate}/hr`;
+    } else {
+      // PAYG bay — check peak
+      const day = new Date().getDay(); // approximate; exact check done at time selection
+      const hour = parseTimeHour(time);
+      const peakStart = parseInt((p?.peak_start || '17:00').split(':')[0]);
+      const peakEnd   = parseInt((p?.peak_end   || '23:00').split(':')[0]);
+      const isPeak = p?.peak_days?.includes(day) && hour >= peakStart && hour < peakEnd;
+      rate = isPeak ? (p?.peak_rate||230) : (p?.offpeak_rate||150);
+      rateLabel = isPeak ? `Peak rate · AED ${rate}/hr` : `Off-peak rate · AED ${rate}/hr`;
+    }
+
+    selectedBayPrice = rate;
+    const total = rate * hours;
+    const totalEl = document.getElementById('booking-total');
+    if (totalEl) totalEl.textContent = rate === 0 ? 'AED 0 — Included' : `AED ${total}`;
+
+    // Rate strip
+    const strip = document.getElementById('rate-info-strip');
+    const stripLabel = document.getElementById('rate-strip-label');
+    if (strip && stripLabel) {
+      strip.style.display = 'flex';
+      stripLabel.textContent = rateLabel;
+    }
+  }
+
+  async function checkDailyLimit() {
+    const isMember = currentProfile?.membership_type === 'monthly';
+    if (!isMember) return;
+    const date = document.getElementById('book-date').value;
+    if (!date) return;
+    const { data } = await sb.from('bookings')
+      .select('id').eq('user_id', currentUser.id).eq('booking_date', date).neq('status','cancelled');
+    const warning = document.getElementById('daily-limit-warning');
+    const btn = document.getElementById('book-btn');
+    if (data && data.length > 0) {
+      warning.style.display = 'block';
+      btn.disabled = true; btn.style.opacity = '0.4';
+    } else {
+      warning.style.display = 'none';
+      btn.disabled = false; btn.style.opacity = '1';
+    }
   }
 
   document.addEventListener('change', e => {
-    if (e.target.id === 'book-duration') updateBookingTotal();
+    if (['book-duration','book-time'].includes(e.target.id)) updateBookingTotal();
   });
 
   async function submitBooking() {
     if (!selectedBayType) return;
 
+    const isMember = currentProfile?.membership_type === 'monthly';
     const date     = document.getElementById('book-date').value;
     const time     = document.getElementById('book-time').value;
-    const duration = parseInt(document.getElementById('book-duration').value);
+    const duration = parseFloat(document.getElementById('book-duration').value);
     const players  = document.getElementById('book-players').value;
     const notes    = document.getElementById('book-notes').value;
-    const total    = selectedBayPrice * duration;
+    const total    = isMember && selectedBayTypeKey === 'bay' ? 0 : Math.round(selectedBayPrice * duration);
     const btn      = document.getElementById('book-btn');
     const errEl    = document.getElementById('book-error');
 
     errEl.style.display = 'none';
     if (!date) { showError(errEl, 'Please select a date.'); return; }
+    if (!time) { showError(errEl, 'Please select a time.'); return; }
+
+    // Members: enforce 1 booking per day
+    if (isMember && selectedBayTypeKey === 'bay') {
+      const { data: existing } = await sb.from('bookings')
+        .select('id').eq('user_id', currentUser.id).eq('booking_date', date).neq('status','cancelled');
+      if (existing && existing.length > 0) {
+        showError(errEl, 'You already have a booking on this date. Members are limited to 1 session per day.');
+        return;
+      }
+    }
 
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span>Confirming...';
@@ -1228,7 +1388,7 @@
       booking_time:   time,
       duration_hours: duration,
       players:        parseInt(players),
-      notes,
+      notes:          notes || null,
       total_amount:   total,
       status:         'confirmed',
       created_at:     new Date().toISOString()
@@ -1242,7 +1402,7 @@
       document.getElementById('booking-form-area').style.display = 'none';
       document.getElementById('book-success-msg').style.display = 'block';
       document.querySelectorAll('.bay-card').forEach(c => c.classList.remove('selected'));
-      selectedBayType = null;
+      selectedBayType = null; selectedBayTypeKey = null;
       showToast('Booking confirmed! See you at the studio.');
       await loadDashboard();
       btn.disabled = false;
@@ -1294,11 +1454,24 @@
 
   // ── UPGRADE MEMBERSHIP ─────────────────────
   async function upgradeMembership(type) {
-    const { error } = await sb.from('profiles').update({
-      membership_type: type,
-      updated_at: new Date().toISOString()
-    }).eq('id', currentUser.id);
+    const now = new Date();
+    const expires = new Date(now);
+    expires.setMonth(expires.getMonth() + 1);
 
+    const updates = {
+      membership_type:    type,
+      membership_status:  type === 'monthly' ? 'active' : 'active',
+      updated_at:         now.toISOString()
+    };
+    if (type === 'monthly') {
+      updates.membership_started_at = now.toISOString();
+      updates.membership_expires_at = expires.toISOString();
+    } else {
+      updates.membership_started_at = null;
+      updates.membership_expires_at = null;
+    }
+
+    const { error } = await sb.from('profiles').update(updates).eq('id', currentUser.id);
     if (!error) {
       showToast(type === 'monthly' ? 'Upgraded to Monthly Member!' : 'Switched to Pay As You Go.');
       await loadDashboard();
