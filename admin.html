@@ -1085,10 +1085,10 @@
       .select('*')
       .order('created_at', { ascending: false });
 
-    // Load all profiles
+    // Load all profiles (select all including email, membership dates)
     const { data: profiles } = await sb
       .from('profiles')
-      .select('*')
+      .select('id, first_name, last_name, email, phone, membership_type, membership_status, membership_started_at, membership_expires_at, created_at, updated_at')
       .order('created_at', { ascending: false });
 
     // Mark guest bookings (no user_id) vs member bookings
@@ -1739,12 +1739,15 @@
     }
     tbody.innerHTML = data.map(m => {
       const bookingCount = allBookings.filter(b => b.user_id === m.id).length;
+      const statusBadge = m.membership_status === 'suspended'
+        ? '<span class="badge badge-red">Suspended</span>'
+        : '<span class="badge badge-green">Active</span>';
       return `<tr>
         <td><strong>${m.first_name || ''} ${m.last_name || ''}</strong></td>
-        <td style="color:#888;font-size:0.82rem;">—</td>
+        <td style="color:#888;font-size:0.82rem;">${m.email || '—'}</td>
         <td style="color:#888;">${m.phone || '—'}</td>
         <td>${membershipBadge(m.membership_type)}</td>
-        <td>${m.membership_status === 'active' ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-grey">Inactive</span>'}</td>
+        <td>${statusBadge}</td>
         <td style="color:#888;">${formatDate(m.created_at)}</td>
         <td style="text-align:center;">${bookingCount}</td>
         <td style="display:flex;gap:6px;">
@@ -1762,7 +1765,7 @@
     if (search) {
       data = data.filter(m => {
         const name = `${m.first_name || ''} ${m.last_name || ''}`.toLowerCase();
-        return name.includes(search) || (m.phone || '').includes(search);
+        return name.includes(search) || (m.email || '').toLowerCase().includes(search) || (m.phone || '').includes(search);
       });
     }
     renderMembers(data);
@@ -1774,14 +1777,20 @@
     const bookings = allBookings.filter(b => b.user_id === id);
     const totalSpent = bookings.filter(b => b.status !== 'cancelled').reduce((a, b) => a + (b.total_amount || 0), 0);
 
+    const memStarted = m.membership_started_at ? formatDate(m.membership_started_at) : '—';
+    const memExpires = m.membership_expires_at ? formatDate(m.membership_expires_at) : '—';
     document.getElementById('member-modal-content').innerHTML = `
       <div class="modal-row"><span class="modal-key">Name</span><span class="modal-val">${m.first_name || ''} ${m.last_name || ''}</span></div>
+      <div class="modal-row"><span class="modal-key">Email</span><span class="modal-val">${m.email || '—'}</span></div>
       <div class="modal-row"><span class="modal-key">Phone</span><span class="modal-val">${m.phone || '—'}</span></div>
       <div class="modal-row"><span class="modal-key">Membership</span><span class="modal-val">${membershipBadge(m.membership_type)}</span></div>
       <div class="modal-row"><span class="modal-key">Status</span><span class="modal-val">${m.membership_status || 'active'}</span></div>
+      ${m.membership_type === 'monthly' ? `
+      <div class="modal-row"><span class="modal-key">Started</span><span class="modal-val">${memStarted}</span></div>
+      <div class="modal-row"><span class="modal-key">Renews</span><span class="modal-val">${memExpires}</span></div>` : ''}
       <div class="modal-row"><span class="modal-key">Total Bookings</span><span class="modal-val">${bookings.length}</span></div>
       <div class="modal-row"><span class="modal-key">Total Spent</span><span class="modal-val">AED ${totalSpent}</span></div>
-      <div class="modal-row"><span class="modal-key">Member Since</span><span class="modal-val">${formatDate(m.created_at)}</span></div>
+      <div class="modal-row"><span class="modal-key">Joined</span><span class="modal-val">${formatDate(m.created_at)}</span></div>
     `;
 
     document.getElementById('member-modal-actions').innerHTML = `
